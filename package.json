@@ -1,0 +1,37 @@
+{
+  "name": "vgit",
+  "version": "0.0.1",
+  "description": "",
+  "homepage": "https://github.com/ExecMeadow/vgit#readme",
+  "bugs": {
+    "url": "https://github.com/ExecMeadow/vgit/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ExecMeadow/vgit.git"
+  },
+  "license": "MIT",
+  "author": "Amira Basyouni",
+  "type": "module",
+  "main": "index.js",
+  "scripts": {
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "build": "tsc",
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "tsx ./src/cli.ts"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@eslint/json": "^2.1.1",
+    "@types/node": "^26.6.6",
+    "eslint": "^10.15.0",
+    "globals": "^17.14.0",
+    "prettier": "3.10.1",
+    "tsx": "^4.23.15",
+    "typescript-eslint": "^8.73.0"
+  },
+  "dependencies": {
+    "isomorphic-git": "^1.44.16"
+  }
+}
