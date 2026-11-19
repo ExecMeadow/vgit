@@ -5,6 +5,7 @@ import packageJson from "../package.json" with { type: "json" };
 import printHelp from "./printHelp.js";
 
 import core from "./engine/core.js";
+import renderer from "./terminal-ui/renderer.js";
 
 const { values: flagValues } = parseArgs({
   args: process.argv.slice(2),
@@ -38,4 +39,13 @@ if (flagValues.version) {
   process.exit(0);
 }
 
-core(args);
+const result = await core(args);
+
+if (result.error) {
+  console.error(result.error.type);
+  console.error(result.error.message);
+  process.exit(1);
+} else {
+  console.log(renderer(result.result));
+  process.exit(0);
+}
