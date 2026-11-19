@@ -1,8 +1,8 @@
 import format from "./format.js";
-import { Outputs } from "../types.js";
+import { Output } from "../types.js";
 
-export default function renderer(output: Outputs) {
-  for (const element of output) {
+export default function renderer(outputs: Output[]) {
+  for (const element of outputs) {
     if (element.type === "text") {
       render[element.type](element.value);
     } else {
@@ -10,7 +10,6 @@ export default function renderer(output: Outputs) {
     }
   }
 }
-
 
 const render = {
   text(message: string) {

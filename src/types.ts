@@ -1,7 +1,8 @@
-type Segment = {
-  command?: Command;
-  [seg: string]: Segment | Command | undefined;
-};
+type Segment =
+  | {
+      [seg: string]: Segment | Command | undefined;
+    }
+  | { command: Command; [seg: string]: Segment | Command | undefined };
 
 type Command = {
   execute: (params: string[]) => Promise<Result>;
