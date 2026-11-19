@@ -1,17 +1,34 @@
-import resolveArgs from "./resolveArgs.js";
-import executor from "./executor.js";
+import { Error, CommandOutput, Segment, Leaf } from "../types.js";
+import { verify } from "./validation.js";
 
-export default async function core(args: string[]) {
-  const { error: argsError, command, params } = resolveArgs(args);
-
-  if (argsError) {
+function getCommandFromNode(
+  currentNode: Segment,
+): { error: Error; command?: never } | { command: Leaf; error?: never } {
+  if (!currentNode.leaf) {
     return {
-      error: {
-        type: "Argument resolution error: ",
-        message: argsError.message,
-      },
+      error: { code: "LEAF_NOT_FOUND", message: `Command does not exist.` },
     };
   }
-
-  return await executor(command, params);
+  return { command: currentNode.leaf };
 }
+
+async function execute(
+  command: Leaf,
+  params: string[],
+): Promise<
+  | { error: Error; outputs?: never }
+  | { outputs: CommandOutput[]; error?: never }
+> {
+  const result = await command.execute(params);
+  const { error: resultError } = verify.isValidCommandOutputArray(
+    result.outputs,
+  );
+  if (resultError) {
+    return {
+      error: { code: "COMMAND_FAILED", message: resultError.message },
+    };
+  }
+  return { outputs: result.outputs };
+}
+
+export { execute, getCommandFromNode };

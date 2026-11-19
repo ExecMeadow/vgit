@@ -1,19 +1,17 @@
-import { Segment, Command } from "./types.js";
+import { Segment } from "./types.js";
 import branch from "./commands/branch.js";
-
-const command: Command = { description: "", usage: "", execute() {} };
 
 export default {
   branch: {
-    list: { command: branch.list },
-    create: { command: branch.create },
-    delete: { command: branch.delete },
-    switch: { command },
-    rename: { command },
-    merge: { command },
-    track: { command },
+    list: { leaf: branch.list },
+    create: { leaf: branch.create },
+    delete: { leaf: branch.delete },
+    //    switch: { leaf },
+    //    rename: { leaf },
+    //    merge: { leaf },
+    //    track: { leaf },
   },
-  stash: {
+  /*  stash: {
     list: {},
     create: {},
     delete: {},
@@ -25,4 +23,5 @@ export default {
     delete: {},
     show: {},
   },
+ */
 } as Segment;

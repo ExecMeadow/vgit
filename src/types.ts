@@ -1,22 +1,23 @@
 type Segment =
   | {
-      [seg: string]: Segment | Command | undefined;
+      leaf?: never;
+      [seg: string]: Segment | Leaf | undefined;
     }
-  | { command: Command; [seg: string]: Segment | Command | undefined };
+  | { leaf: Leaf; [seg: string]: Segment | Leaf | undefined };
 
-type Command = {
-  execute: (params: string[]) => Promise<Result>;
+type Leaf = {
+  execute: (params: string[]) => Promise<{ outputs: CommandOutput[] }>;
   description: string;
   usage: string;
 };
 
-type Output =
+type CommandOutput =
   | { type: "text"; value: string }
   | { type: "indentedList" | "numberedList"; values: string[] };
 
-type Result = {
-  command: string;
-  outputs: Output[];
+type Error = {
+  code: string;
+  message: string;
 };
 
-export { Segment, Command, Output };
+export { Segment, Leaf, CommandOutput, Error };

@@ -1,5 +1,5 @@
 // validate.ts
-import { Output } from "../types.js";
+import { CommandOutput } from "../types.js";
 
 // Object validation
 function isObject(obj: unknown) {
@@ -26,7 +26,7 @@ function isStringArray(arr: string[]) {
 }
 
 // Result validation
-function isValidOutput(output: Output) {
+function isValidOutput(output: CommandOutput) {
   if (!isObject(output)) {
     return false;
   }
@@ -51,31 +51,18 @@ function isValidOutput(output: Output) {
 
   return true;
 }
-function isOutputArray(outputs: Output[]) {
+function isOutputArray(outputs: CommandOutput[]) {
   return outputs.every((output) => isValidOutput(output));
-}
-function isValidResult(result: { command: string; outputs: Output[] }) {
-  if (!isObject(result)) {
-    return false;
-  }
-  if (!hasExactKeys(result, ["command", "outputs"])) {
-    return false;
-  }
-  if (!isString(result.command)) {
-    return false;
-  }
-  if (!isOutputArray(result.outputs)) {
-    return false;
-  }
-  return true;
 }
 
 const verify = {
-  isValidResult(result: { command: string; outputs: Output[] }) {
-    if (!isValidResult(result)) {
-      return {error: {message: `Result is invalid. Received: ${result}`}};
+  isValidCommandOutputArray(outputs: CommandOutput[]) {
+    if (!isOutputArray(outputs)) {
+      return {
+        error: { message: `Output array is invalid. Received: ${outputs}` },
+      };
     }
-    return {error: null};
+    return { error: null };
   },
 };
 

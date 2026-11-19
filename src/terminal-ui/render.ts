@@ -1,17 +1,17 @@
 import format from "./format.js";
-import { Output } from "../types.js";
+import { CommandOutput } from "../types.js";
 
-export default function renderer(outputs: Output[]) {
+export default function render(outputs: CommandOutput[]) {
   for (const element of outputs) {
     if (element.type === "text") {
-      render[element.type](element.value);
+      print[element.type](element.value);
     } else {
-      render[element.type](element.values);
+      print[element.type](element.values);
     }
   }
 }
 
-const render = {
+const print = {
   text(message: string) {
     console.log(message);
   },

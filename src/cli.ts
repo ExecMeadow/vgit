@@ -4,10 +4,11 @@ import { parseArgs } from "node:util";
 import packageJson from "../package.json" with { type: "json" };
 import printHelp from "./printHelp.js";
 
-import core from "./engine/core.js";
-import renderer from "./terminal-ui/renderer.js";
+import resolvePositionals from "./engine/resolvePositionals.js";
+import { execute, getCommandFromNode } from "./engine/core.js";
+import render from "./terminal-ui/render.js";
 
-const { values: flagValues } = parseArgs({
+const { positionals, values: flagValues } = parseArgs({
   args: process.argv.slice(2),
   options: {
     version: { type: "boolean", short: "v", default: false },
@@ -19,16 +20,6 @@ const { values: flagValues } = parseArgs({
 const args = process.argv.slice(2);
 const hasOnlyOneArg = args.length === 1;
 
-// respond to --help
-if (flagValues.help) {
-  if (!hasOnlyOneArg) {
-    console.error("error: --help must be used by itself.");
-    process.exit(1);
-  }
-  printHelp();
-  process.exit(0);
-}
-
 // respond to --version
 if (flagValues.version) {
   if (!hasOnlyOneArg) {
@@ -39,13 +30,36 @@ if (flagValues.version) {
   process.exit(0);
 }
 
-const result = await core(args);
-
-if (result.error) {
-  console.error(result.error.type);
-  console.error(result.error.message);
-  process.exit(1);
-} else {
-  console.log(renderer(result.result));
+// respond to --help
+if (flagValues.help) {
+  const response = printHelp(positionals);
+  if (response.error) {
+    console.error(response.error.message);
+    process.exit(1);
+  }
+  console.log(response.output);
   process.exit(0);
 }
+
+// CORE LOGIC
+const {
+  error: positionalsError,
+  node,
+  params,
+} = resolvePositionals(positionals);
+if (positionalsError) {
+  console.error(positionalsError.message);
+  process.exit(1);
+}
+const { error: commandError, command } = getCommandFromNode(node);
+if (commandError) {
+  console.error(commandError.message);
+  process.exit(1);
+}
+const { error: executionError, outputs } = await execute(command, params);
+if (executionError) {
+  console.error(executionError.message);
+  process.exit(1);
+}
+render(outputs);
+process.exit(0);

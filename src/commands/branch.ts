@@ -1,7 +1,7 @@
 import git from "isomorphic-git";
 import repository from "./repo.js";
 
-import { Command } from "../types.js";
+import { Leaf } from "../types.js";
 
 const program = "vgit";
 const domain = "branch";
@@ -25,7 +25,7 @@ export default {
     execute: branchDelete,
   },
  */
-} as Record<string, Command>;
+} as Record<string, Leaf>;
 
 // Methods
 async function branchList() {
@@ -40,7 +40,7 @@ async function branchList() {
   });
 */
   return {
-    command: "branch list",
+    // command: "branch list",
     //    data: { branches: branchList, currentBranch },
     outputs: [
       { type: "text", value: "Branches: " },
@@ -52,7 +52,3 @@ async function branchList() {
     ],
   };
 }
-
-//function branchCreate() {}
-
-//function branchDelete() {}
