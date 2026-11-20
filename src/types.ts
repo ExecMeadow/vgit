@@ -1,17 +1,16 @@
-type Segment =
-  | {
-      leaf?: never;
-      [seg: string]: Segment | Leaf | undefined;
-    }
-  | { leaf: Leaf; [seg: string]: Segment | Leaf | undefined };
+type CommandTree = {
+  leaf?: Leaf;
+  [seg: string]: CommandTree | Leaf | undefined;
+};
 
 type Leaf = {
-  execute: (params: string[]) => Promise<{ outputs: CommandOutput[] }>;
+  leaf?: undefined;
+  execute: (params: string[]) => Promise<{ outputs: Output[] }>;
   description: string;
   usage: string;
 };
 
-type CommandOutput =
+type Output =
   | { type: "text"; value: string }
   | { type: "indentedList" | "numberedList"; values: string[] };
 
@@ -20,4 +19,4 @@ type Error = {
   message: string;
 };
 
-export { Segment, Leaf, CommandOutput, Error };
+export { CommandTree, Leaf, Output, Error };

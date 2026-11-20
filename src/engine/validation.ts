@@ -1,5 +1,5 @@
 // validate.ts
-import { CommandOutput } from "../types.js";
+import { Output, CommandTree, Leaf } from "../types.js";
 
 // Object validation
 function isObject(obj: unknown) {
@@ -25,8 +25,13 @@ function isStringArray(arr: string[]) {
   return arr.every((element) => typeof element === "string");
 }
 
+// function validation
+function isFunction(fun: unknown) {
+  return typeof fun === "function";
+}
+
 // Result validation
-function isValidOutput(output: CommandOutput) {
+function isValidOutput(output: Output) {
   if (!isObject(output)) {
     return false;
   }
@@ -51,18 +56,33 @@ function isValidOutput(output: CommandOutput) {
 
   return true;
 }
-function isOutputArray(outputs: CommandOutput[]) {
+function isOutputArray(outputs: Output[]) {
   return outputs.every((output) => isValidOutput(output));
 }
 
 const verify = {
-  isValidCommandOutputArray(outputs: CommandOutput[]) {
+  isValidCommandOutputArray(outputs: Output[]) {
     if (!isOutputArray(outputs)) {
       return {
         error: { message: `Output array is invalid. Received: ${outputs}` },
       };
     }
     return { error: null };
+  },
+  isLeaf(node: CommandTree | Leaf): node is Leaf {
+    if (!isObject(node)) {
+      return false;
+    }
+    if (!hasExactKeys(node, ["execute", "usage", "description"])) {
+      return false;
+    }
+    if (!isString(node.description)) {
+      return false;
+    }
+    if (!isFunction(node.execute)) {
+      return false;
+    }
+    return true;
   },
 };
 

@@ -1,7 +1,7 @@
 import format from "./format.js";
-import { CommandOutput } from "../types.js";
+import { Output } from "../types.js";
 
-export default function render(outputs: CommandOutput[]) {
+export default function render(outputs: Output[]) {
   for (const element of outputs) {
     if (element.type === "text") {
       print[element.type](element.value);
@@ -16,10 +16,10 @@ const print = {
     console.log(message);
   },
   numberedList(items: string[]) {
-    console.log(format.numberedList(items, 2));
+    console.log(format.numberedList(items, 1));
   },
   indentedList(items: string[]) {
-    console.log(format.indentedList(items, 2));
+    console.log(format.indentedList(items, 1));
   },
   table() {},
 };

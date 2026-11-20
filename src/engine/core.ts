@@ -1,12 +1,12 @@
-import { Error, CommandOutput, Segment, Leaf } from "../types.js";
+import { Error, Output, CommandTree, Leaf } from "../types.js";
 import { verify } from "./validation.js";
 
 function getCommandFromNode(
-  currentNode: Segment,
+  currentNode: CommandTree,
 ): { error: Error; command?: never } | { command: Leaf; error?: never } {
   if (!currentNode.leaf) {
     return {
-      error: { code: "LEAF_NOT_FOUND", message: `Command does not exist.` },
+      error: { code: "LEAF_NOT_FOUND", message: `Command is incomplete.` },
     };
   }
   return { command: currentNode.leaf };
@@ -16,8 +16,7 @@ async function execute(
   command: Leaf,
   params: string[],
 ): Promise<
-  | { error: Error; outputs?: never }
-  | { outputs: CommandOutput[]; error?: never }
+  { error: Error; outputs?: never } | { outputs: Output[]; error?: never }
 > {
   const result = await command.execute(params);
   const { error: resultError } = verify.isValidCommandOutputArray(

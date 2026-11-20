@@ -1,4 +1,4 @@
-import { Segment, Error } from "../types.js";
+import { CommandTree, Error } from "../types.js";
 
 import commands from "../dictionary.js";
 
@@ -6,11 +6,11 @@ export default function resolvePositionals(
   positionals: string[],
 ):
   | { error: Error; node?: never; params?: never }
-  | { node: Segment; params: string[]; error?: never } {
-  let currentNode: Segment | undefined = commands;
+  | { node: CommandTree; params: string[]; error?: never } {
+  let currentNode: CommandTree | undefined = commands;
   // Traverse dictionary, halt when leaf is found.
   for (let i = 0; i < positionals.length; i++) {
-    currentNode = currentNode[positionals[i]] as Segment | undefined;
+    currentNode = currentNode[positionals[i]] as CommandTree | undefined;
     if (currentNode?.leaf) {
       // Reached a command definition
       const params = positionals.slice(i + 1);

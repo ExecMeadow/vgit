@@ -13,7 +13,6 @@ export default {
     usage: `${program} ${domain} list`,
     execute: branchList,
   },
-  /*
   create: {
     description: "Create a branch",
     usage: `${program} ${domain} create`,
@@ -24,7 +23,6 @@ export default {
     usage: `${program} ${domain} delete`,
     execute: branchDelete,
   },
- */
 } as Record<string, Leaf>;
 
 // Methods
@@ -33,17 +31,17 @@ async function branchList() {
     fs: repository.fs,
     dir: repository.dir,
   });
-
-  /* const currentBranch = await git.currentBranch({
+  /* 
+    const currentBranch = await git.currentBranch({
     fs: repository.fs,
     dir: repository.dir,
   });
-*/
+  */
   return {
     // command: "branch list",
     //    data: { branches: branchList, currentBranch },
     outputs: [
-      { type: "text", value: "Branches: " },
+      { type: "text", value: "Branches:" },
       {
         type: "text",
         value: `${branchList.length} branch${branchList.length === 1 ? "" : "es"} found.`,
@@ -51,4 +49,12 @@ async function branchList() {
       { type: "indentedList", values: branchList },
     ],
   };
+}
+
+async function branchCreate() {
+  return { outputs: [] };
+}
+
+async function branchDelete() {
+  return { outputs: [] };
 }

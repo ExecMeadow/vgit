@@ -1,4 +1,4 @@
-import { Segment } from "./types.js";
+import { CommandTree } from "./types.js";
 import branch from "./commands/branch.js";
 
 export default {
@@ -6,7 +6,7 @@ export default {
     list: { leaf: branch.list },
     create: { leaf: branch.create },
     delete: { leaf: branch.delete },
-    //    switch: { leaf },
+    //switch: { leaf },
     //    rename: { leaf },
     //    merge: { leaf },
     //    track: { leaf },
@@ -24,4 +24,4 @@ export default {
     show: {},
   },
  */
-} as Segment;
+} as CommandTree;
