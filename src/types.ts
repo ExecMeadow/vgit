@@ -1,15 +1,23 @@
-type CommandTree = {
-  leaf?: Leaf;
-  [seg: string]: CommandTree | Leaf | undefined;
+type GitCommandTree = {
+  type: "group";
+  description: string;
+  [seg: string]: GitCommandTree | GitCommand | string | undefined;
 };
-
-type Leaf = {
-  leaf?: undefined;
-  execute: (params: string[]) => Promise<{ outputs: Output[] }>;
+type GitCommand = {
+  type: "command";
   description: string;
   usage: string;
+  execute: (
+    params: string[],
+  ) => Promise<
+    { data: unknown; error?: never } | { error: Error; data?: never }
+  >;
 };
 
+type TerminalUITree = {
+  [seg: string]: TerminalUITree | OutputCall<unknown> | undefined;
+};
+type OutputCall<TArgs> = (...args: TArgs[]) => Output[];
 type Output =
   | { type: "text"; value: string }
   | { type: "indentedList" | "numberedList"; values: string[] };
@@ -19,4 +27,4 @@ type Error = {
   message: string;
 };
 
-export { CommandTree, Leaf, Output, Error };
+export { GitCommandTree, GitCommand, Output, Error, TerminalUITree };

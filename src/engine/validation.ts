@@ -1,5 +1,5 @@
 // validate.ts
-import { Output, CommandTree, Leaf } from "../types.js";
+import { Output, GitCommand } from "../types.js";
 
 // Object validation
 function isObject(obj: unknown) {
@@ -69,11 +69,14 @@ const verify = {
     }
     return { error: null };
   },
-  isLeaf(node: CommandTree | Leaf): node is Leaf {
+  isGitCommand(node: GitCommand) {
     if (!isObject(node)) {
       return false;
     }
-    if (!hasExactKeys(node, ["execute", "usage", "description"])) {
+    if (!hasExactKeys(node, ["type", "description", "usage", "execute"])) {
+      return false;
+    }
+    if (node.type !== "command") {
       return false;
     }
     if (!isString(node.description)) {

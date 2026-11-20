@@ -2,12 +2,16 @@
 
 import { parseArgs } from "node:util";
 import packageJson from "../package.json" with { type: "json" };
-import printHelp from "./printHelp.js";
 
 import resolvePositionals from "./engine/resolvePositionals.js";
-import { execute, getCommandFromNode } from "./engine/core.js";
-import render from "./terminal-ui/render.js";
-import discoverCommands, { getCommandListOutputs } from "./discoverCommands.js";
+import execute from "./engine/execute.js";
+import renderGitData, {
+  renderProgramUsage,
+  renderCommandUsage,
+  renderDescription,
+  renderAvailableCommands,
+} from "./terminal-ui/render.js";
+import discoverCommands from "./engine/discoverCommands.js";
 
 const { positionals, values: flagValues } = parseArgs({
   args: process.argv.slice(2),
@@ -33,15 +37,28 @@ if (flagValues.version) {
 
 // respond to --help and help
 function respondToHelp(positionals: string[]) {
-  const { error: responseError, outputs } = printHelp(positionals);
-  if (responseError) {
-    console.error("Error: " + responseError.message);
+  const { error: positionalsError, node } = resolvePositionals(positionals);
+  if (positionalsError) {
+    console.error("Error: " + positionalsError.message);
     process.exit(1);
   }
-  render(outputs);
+  switch (node.type) {
+    case "command": {
+      renderCommandUsage(node.usage);
+      renderDescription(node.description);
+      break;
+    }
+    case "group": {
+      if (positionals.length === 0) {
+        renderProgramUsage();
+      }
+      const commands = discoverCommands(node, [positionals.join(" ")]);
+      renderAvailableCommands(commands);
+    }
+  }
   process.exit(0);
 }
-if (flagValues.help) {
+if (flagValues.help || positionals.length === 0) {
   respondToHelp(positionals);
 } else if (positionals[0] === "help") {
   respondToHelp(positionals.slice(1));
@@ -57,20 +74,33 @@ const {
 } = resolvePositionals(positionals);
 if (positionalsError) {
   console.error("Error: " + positionalsError.message);
-  process.exit(1);
+} else {
+  switch (node.type) {
+    case "group": {
+      // Handle incomplete command.
+      const commands = discoverCommands(node, [positionals.join(" ")]);
+      renderDescription(node.description);
+      renderAvailableCommands(commands);
+      process.exit(1);
+      break;
+    }
+    case "command": {
+      // Execute command.
+      const { error: executionError, data } = await execute(node, params);
+      if (executionError) {
+        console.error("Error: " + executionError.message);
+        process.exit(1);
+      }
+      // Render command data.
+      const renderError = renderGitData(positionals, data);
+      if (renderError) {
+        console.error("Error: " + renderError.message);
+        process.exit(1);
+      }
+      process.exit(0);
+    }
+  }
 }
-const { error: commandError, command } = getCommandFromNode(node);
-if (commandError) {
-  console.error("Error: " + commandError.message);
-  const commands = discoverCommands(node, [positionals.join(" ")]);
-  const outputs = getCommandListOutputs(commands);
-  render(outputs);
-  process.exit(1);
-}
-const { error: executionError, outputs } = await execute(command, params);
-if (executionError) {
-  console.error("Error: " + executionError.message);
-  process.exit(1);
-}
-render(outputs);
-process.exit(0);
+// Handle unexpected errors.
+console.error("Unexpected error.");
+process.exit(1);

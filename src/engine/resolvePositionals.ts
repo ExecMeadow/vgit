@@ -1,43 +1,50 @@
-import { CommandTree, Error } from "../types.js";
+import { GitCommandTree, GitCommand, Error } from "../types.js";
 
-import commands from "../dictionary.js";
+import commandTree from "../gitCommandTree.js";
 
 export default function resolvePositionals(
   positionals: string[],
 ):
   | { error: Error; node?: never; params?: never }
-  | { node: CommandTree; params: string[]; error?: never } {
-  let currentNode: CommandTree | undefined = commands;
-  // Traverse dictionary, halt when leaf is found.
+  | { node: GitCommandTree | GitCommand; params: string[]; error?: never } {
+  let currentNode = commandTree;
+  // Traverse command tree.
   for (let i = 0; i < positionals.length; i++) {
-    currentNode = currentNode[positionals[i]] as CommandTree | undefined;
-    if (currentNode?.leaf) {
-      // Reached a command definition
-      const params = positionals.slice(i + 1);
-      return { node: currentNode, params };
-    }
-    if (!currentNode) {
-      // segment does not exist
-      const errorMessage = getErrorMessage({
+    const nextNode = currentNode[positionals[i]];
+    if (!nextNode) {
+      // Return error.
+      const error = getError({
         positionals,
-        message: "Command does not exist.",
+        code: "ARGS_ERROR",
       });
-      return { error: { code: "ARGS_ERROR", message: errorMessage } };
+      return { error };
+    }
+    if (typeof nextNode != "string" && nextNode.type === "group") {
+      // Continue traversing.
+      currentNode = nextNode;
+    } else if (typeof nextNode !== "string" && nextNode.type === "command") {
+      // Return command definition.
+      const params = positionals.slice(i + 1);
+      return { node: nextNode, params };
     }
   }
-  // Ended on a segment
+  // Return segment.
   return { node: currentNode, params: [] };
 }
 
-function getErrorMessage({
+function getError({
   positionals,
-  message,
+  code,
 }: {
   positionals: string[];
-  message: string;
+  code: string;
 }) {
-  // Capture verb as a string.
-  const args = positionals.join(" ");
-  const errorMessage = message + ` Received: "${args}".`;
-  return errorMessage;
+  // Capture command as a string.
+  const command = positionals.join(" ");
+  let message = "";
+  if (code === "ARGS_ERROR") {
+    message = "Command does not exist. ";
+  }
+  const error = { code, message: message + ` Received: "${command}".` };
+  return error;
 }
