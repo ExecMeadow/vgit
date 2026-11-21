@@ -47,12 +47,12 @@ const terminalUIMap = {
     ];
   },
   "branch-create"(data: { branchName?: string }) {
-    const { branchName = "" } = data;
-    return [{ type: "text", value: `Created branch ${branchName}` }];
+    const { branchName = ""} = data;
+    return [{ type: "text", value: `Created branch '${branchName}'.` }];
   },
-  "branch-delete"(data: { branchName?: string }) {
-    const { branchName = "" } = data;
-    return [{ type: "text", value: `Deleted branch ${branchName}` }];
+  "branch-delete"(data: { branchName?: string, oid?: string }) {
+    const { branchName = "", oid = "" } = data;
+    return [{ type: "text", value: `Deleted branch '${branchName}' (was ${oid}).` }];
   },
 } satisfies TerminalUIMap;
 

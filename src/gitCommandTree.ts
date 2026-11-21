@@ -26,16 +26,26 @@ const branch = {
       return { error: { code: "FAILED_GIT_COMMAND", message: `${err}` } };
     }
   },
-  async create() {
+  async create(params: string[]) {
+    const branchName = params[0];
     try {
-      return { data: {} };
+      await git.branch({ fs, dir: getDir(), ref: branchName });
+      return { data: { branchName } };
     } catch (err: unknown) {
       return { error: { code: "FAILED_GIT_COMMAND", message: `${err}` } };
     }
   },
-  async delete() {
+  async delete(params: string[]) {
+    const branchName = params[0];
     try {
-      return { data: {} };
+      // Retrieve commit hash that this branch is pointing to:
+      const objectId = await git.resolveRef({
+        fs,
+        dir: getDir(),
+        ref: `refs/heads/${branchName}`,
+      });
+      await git.deleteBranch({ fs, dir: getDir(), ref: branchName });
+      return { data: { branchName, oid: objectId.slice(0, 7) } };
     } catch (err: unknown) {
       return { error: { code: "FAILED_GIT_COMMAND", message: `${err}` } };
     }

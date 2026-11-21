@@ -52,7 +52,7 @@ function respondToHelp(positionals: string[]) {
       if (positionals.length === 0) {
         renderProgramUsage();
       }
-      const commands = discoverCommands(node, [positionals.join(" ")]);
+      const commands = discoverCommands(node);
       renderAvailableGitCommands(commands);
     }
   }
@@ -74,6 +74,7 @@ const {
 } = resolvePositionals(positionals);
 if (positionalsError) {
   console.error("Error: " + positionalsError.message);
+  process.exit(1);
 } else {
   switch (node.type) {
     case "group": {
