@@ -1,10 +1,10 @@
-import { Error, GitCommand } from "../types.js";
+import { Error, GitCommand, GitCommandId, Data } from "../types.js";
 //import { verify } from "./validation.js";
 
 export default async function execute(
   command: GitCommand,
   params: string[],
-): Promise<{ error: Error; data?: never } | { data: unknown; error?: never }> {
+): Promise<{ error: Error; data?: never; commandId?: never } | { data: Data; commandId: GitCommandId; error?: never }> {
   try {
     const { error: executionError, data } = await command.execute(params);
     if (executionError) {
@@ -15,7 +15,7 @@ export default async function execute(
         },
       };
     }
-    return { data };
+    return { data, commandId: command.id };
   } catch (err) {
     return {
       error: {

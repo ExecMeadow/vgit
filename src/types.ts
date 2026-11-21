@@ -5,19 +5,21 @@ type GitCommandTree = {
 };
 type GitCommand = {
   type: "command";
+  id: GitCommandId;
   description: string;
   usage: string;
   execute: (
     params: string[],
   ) => Promise<
-    { data: unknown; error?: never } | { error: Error; data?: never }
+    { data: Data; error?: never } | { error: Error; data?: never }
   >;
 };
+type GitCommandId = "branch-list" | "branch-create" | "branch-delete";
 
-type TerminalUITree = {
-  [seg: string]: TerminalUITree | OutputCall<unknown> | undefined;
-};
-type OutputCall<TArgs> = (...args: TArgs[]) => Output[];
+type TerminalUIMap = Record<GitCommandId, (args: Data) => Output[]>
+type Data = {
+	[seg: string]: string | string[] | undefined;
+}
 type Output =
   | { type: "text"; value: string }
   | { type: "indentedList" | "numberedList"; values: string[] };
@@ -27,4 +29,4 @@ type Error = {
   message: string;
 };
 
-export { GitCommandTree, GitCommand, Output, Error, TerminalUITree };
+export { Data, GitCommandTree, GitCommand, GitCommandId, Output, Error, TerminalUIMap };

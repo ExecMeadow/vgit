@@ -1,25 +1,25 @@
 import git from "isomorphic-git";
 import fs from "node:fs";
-import { GitCommandTree, Error } from "./types.js";
+import { Data, GitCommandTree, Error } from "./types.js";
 
 // context
-const program = "vgit";
-const domain = "branch";
-const dir = process.cwd();
+const getProgram = () => "vgit";
+const getDomain = () => "branch";
+const getDir = () => process.cwd();
 
 // Git Command Registry
 const branch = {
   async list(): Promise<
-    { error: Error; data?: never } | { data: unknown; error?: never }
+    { error: Error; data?: never } | { data: Data; error?: never }
   > {
     try {
       // Fetch branch list.
-      const branchList = await git.listBranches({ fs, dir });
+      const branchList = await git.listBranches({ fs, dir: getDir() });
       // Fetch current branch.
-      const currentBranch = await git.currentBranch({ fs, dir });
+      const currentBranch = await git.currentBranch({ fs, dir: getDir() });
       // Return data.
       return {
-        data: { branches: branchList, currentBranch },
+        data: { branchList: branchList, currentBranch: currentBranch ?? "" },
       };
       // Catch error.
     } catch (err: unknown) {
@@ -51,20 +51,23 @@ export default {
     description: "Manage branches",
     list: {
       type: "command",
+      id: "branch-list",
       description: "List git branches",
-      usage: `${program} ${domain} list`,
+      usage: `${getProgram()} ${getDomain()} list`,
       execute: branch.list,
     },
     create: {
       type: "command",
+      id: "branch-create",
       description: "Create a branch",
-      usage: `${program} ${domain} create`,
+      usage: `${getProgram()} ${getDomain()} create`,
       execute: branch.create,
     },
     delete: {
       type: "command",
+      id: "branch-delete",
       description: "Delete a branch",
-      usage: `${program} ${domain} delete`,
+      usage: `${getProgram()} ${getDomain()} delete`,
       execute: branch.delete,
     },
     //switch: { leaf },
@@ -85,4 +88,4 @@ export default {
     show: {},
   },
  */
-} as GitCommandTree;
+} satisfies GitCommandTree;

@@ -9,7 +9,7 @@ import renderGitData, {
   renderProgramUsage,
   renderCommandUsage,
   renderDescription,
-  renderAvailableCommands,
+  renderAvailableGitCommands,
 } from "./terminal-ui/render.js";
 import discoverCommands from "./engine/discoverCommands.js";
 
@@ -53,7 +53,7 @@ function respondToHelp(positionals: string[]) {
         renderProgramUsage();
       }
       const commands = discoverCommands(node, [positionals.join(" ")]);
-      renderAvailableCommands(commands);
+      renderAvailableGitCommands(commands);
     }
   }
   process.exit(0);
@@ -80,19 +80,19 @@ if (positionalsError) {
       // Handle incomplete command.
       const commands = discoverCommands(node, [positionals.join(" ")]);
       renderDescription(node.description);
-      renderAvailableCommands(commands);
+      renderAvailableGitCommands(commands);
       process.exit(1);
       break;
     }
     case "command": {
       // Execute command.
-      const { error: executionError, data } = await execute(node, params);
+      const { error: executionError, data, commandId } = await execute(node, params);
       if (executionError) {
         console.error("Error: " + executionError.message);
         process.exit(1);
       }
       // Render command data.
-      const renderError = renderGitData(positionals, data);
+      const renderError = renderGitData(commandId, data);
       if (renderError) {
         console.error("Error: " + renderError.message);
         process.exit(1);

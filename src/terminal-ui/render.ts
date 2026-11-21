@@ -1,18 +1,18 @@
 import format from "./format.js";
-import { Output } from "../types.js";
-import resolveOutputs from "./resolveOutputs.js";
+import { Output, GitCommandId, Data } from "../types.js";
+import {getTerminalUI} from "./terminalUIMap.js";
 
-export default function renderGitData(positionals: string[], data?: unknown) {
-  const { error: outputError, outputs } = resolveOutputs(positionals, data);
+export default function renderGitData(id: GitCommandId, data: Data) {
+  const { error: outputError, ui: outputs } = getTerminalUI(id, data);
   if (outputError) {
     return outputError;
   }
   renderOutputs(outputs);
 }
 
-export function renderAvailableCommands(commandList: string[]) {
+export function renderAvailableGitCommands(commandList: string[]) {
   const output: Output[] = [];
-  output.push({ type: "text", value: "Available commands: " });
+  output.push({ type: "text", value: "Available git commands: " });
   output.push({
     type: "text",
     value: `${commandList.length} command${commandList.length === 1 ? "" : "s"} found.`,
