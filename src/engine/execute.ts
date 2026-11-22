@@ -1,12 +1,24 @@
-import { Error, GitCommand, GitCommandId, Data } from "../types.js";
-//import { verify } from "./validation.js";
+import {
+  Error,
+  EnvironmentContext,
+  GitCommand,
+  GitCommandId,
+  Data,
+} from "../types.js";
 
 export default async function execute(
   command: GitCommand,
-  params: string[],
-): Promise<{ error: Error; data?: never; commandId?: never } | { data: Data; commandId: GitCommandId; error?: never }> {
+  inputs: Data,
+  context: EnvironmentContext,
+): Promise<
+  | { data: Data; commandId: GitCommandId; error?: never }
+  | { error: Error; data?: never; commandId?: never }
+> {
   try {
-    const { error: executionError, data } = await command.execute(params);
+    const { error: executionError, data } = await command.execute(
+      inputs,
+      context,
+    );
     if (executionError) {
       return {
         error: {

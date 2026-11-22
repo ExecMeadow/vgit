@@ -1,5 +1,4 @@
 import { GitCommandTree } from "../types.js";
-//import { verify } from "./engine/validation.js";
 
 export default function discoverCommands(
   node: GitCommandTree,

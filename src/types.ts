@@ -1,3 +1,4 @@
+// Define engine types.
 type GitCommandTree = {
   type: "group";
   description: string;
@@ -9,24 +10,42 @@ type GitCommand = {
   description: string;
   usage: string;
   execute: (
-    params: string[],
-  ) => Promise<
-    { data: Data; error?: never } | { error: Error; data?: never }
-  >;
+    arg0: Data,
+    arg1: EnvironmentContext,
+  ) => Promise<{ data: Data; error?: never } | { error: Error; data?: never }>;
 };
 type GitCommandId = "branch-list" | "branch-create" | "branch-delete";
+type EnvironmentContext = {
+  program: string;
+  dir: string;
+  fs: typeof import("node:fs");
+};
 
-type TerminalUIMap = Record<GitCommandId, (args: Data) => Output[]>
+// Define terminal UI types.
+type TerminalUIMap = Record<GitCommandId, (args: Data) => Output[]>;
 type Data = {
-	[seg: string]: string | string[] | undefined;
-}
+  branchList?: string[];
+  currentBranch?: string;
+  branchName?: string;
+  [seg: string]: string | string[] | undefined;
+};
 type Output =
   | { type: "text"; value: string }
   | { type: "indentedList" | "numberedList"; values: string[] };
 
+// Define Generic error.
 type Error = {
   code: string;
   message: string;
 };
 
-export { Data, GitCommandTree, GitCommand, GitCommandId, Output, Error, TerminalUIMap };
+export {
+  Data,
+  GitCommandTree,
+  GitCommand,
+  GitCommandId,
+  Output,
+  Error,
+  TerminalUIMap,
+  EnvironmentContext,
+};

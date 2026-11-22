@@ -1,5 +1,5 @@
 // validate.ts
-import { Output, GitCommand } from "../types.js";
+import { Error, Output, GitCommand } from "../types.js";
 
 // Object validation
 function isObject(obj: unknown) {
@@ -30,7 +30,7 @@ function isFunction(fun: unknown) {
   return typeof fun === "function";
 }
 
-// Result validation
+// UI validation
 function isValidOutput(output: Output) {
   if (!isObject(output)) {
     return false;
@@ -60,33 +60,36 @@ function isOutputArray(outputs: Output[]) {
   return outputs.every((output) => isValidOutput(output));
 }
 
-const verify = {
-  isValidCommandOutputArray(outputs: Output[]) {
+// engine validation
+export function isGitCommand(node: GitCommand): boolean {
+  if (!isObject(node)) {
+    return false;
+  }
+  if (!hasExactKeys(node, ["type", "id", "description", "usage", "execute"])) {
+    return false;
+  }
+  if (node.type !== "command") {
+    return false;
+  }
+  if (!isString(node.description)) {
+    return false;
+  }
+  if (!isFunction(node.execute)) {
+    return false;
+  }
+  return true;
+}
+
+export const verify = {
+  areValidCommandOutputs(outputs: Output[]): { error?: Error } {
     if (!isOutputArray(outputs)) {
       return {
-        error: { message: `Output array is invalid. Received: ${outputs}` },
+        error: {
+          code: "INVALID_OUTPUT",
+          message: `Output array is invalid. Received: ${outputs}`,
+        },
       };
     }
-    return { error: null };
-  },
-  isGitCommand(node: GitCommand) {
-    if (!isObject(node)) {
-      return false;
-    }
-    if (!hasExactKeys(node, ["type", "description", "usage", "execute"])) {
-      return false;
-    }
-    if (node.type !== "command") {
-      return false;
-    }
-    if (!isString(node.description)) {
-      return false;
-    }
-    if (!isFunction(node.execute)) {
-      return false;
-    }
-    return true;
+    return {};
   },
 };
-
-export { verify };

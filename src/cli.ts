@@ -5,6 +5,7 @@ import packageJson from "../package.json" with { type: "json" };
 
 import resolvePositionals from "./engine/resolvePositionals.js";
 import execute from "./engine/execute.js";
+import resolveInputs from "./engine/resolveInputs.js";
 import renderGitData, {
   renderProgramUsage,
   renderCommandUsage,
@@ -12,6 +13,7 @@ import renderGitData, {
   renderAvailableGitCommands,
 } from "./terminal-ui/render.js";
 import discoverCommands from "./engine/discoverCommands.js";
+import fs from "node:fs";
 
 const { positionals, values: flagValues } = parseArgs({
   args: process.argv.slice(2),
@@ -67,6 +69,7 @@ if (flagValues.help || positionals.length === 0) {
 }
 
 // CORE LOGIC
+const context = { program: "vgit", dir: process.cwd(), fs };
 const {
   error: positionalsError,
   node,
@@ -86,8 +89,17 @@ if (positionalsError) {
       break;
     }
     case "command": {
+      const { error: inputError, inputs } = resolveInputs(node.id, params);
+      if (inputError) {
+        console.error("Error: " + inputError.message);
+        process.exit(1);
+      }
       // Execute command.
-      const { error: executionError, data, commandId } = await execute(node, params);
+      const {
+        error: executionError,
+        data,
+        commandId,
+      } = await execute(node, inputs, context);
       if (executionError) {
         console.error("Error: " + executionError.message);
         process.exit(1);

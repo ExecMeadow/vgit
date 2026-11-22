@@ -6,7 +6,10 @@ export function getTerminalUI(
   id: GitCommandId,
   data: Data,
 ): { error: Error; ui?: never } | { ui: Output[]; error?: never } {
-  const { error: dataError } = getDataStatus(expectedData[id], data);
+  const { error: dataError } = getDataStatus(
+    expectedGitCommandOutput[id],
+    data,
+  );
   if (dataError) {
     return { error: dataError };
   }
@@ -47,17 +50,19 @@ const terminalUIMap = {
     ];
   },
   "branch-create"(data: { branchName?: string }) {
-    const { branchName = ""} = data;
+    const { branchName = "" } = data;
     return [{ type: "text", value: `Created branch '${branchName}'.` }];
   },
-  "branch-delete"(data: { branchName?: string, oid?: string }) {
+  "branch-delete"(data: { branchName?: string; oid?: string }) {
     const { branchName = "", oid = "" } = data;
-    return [{ type: "text", value: `Deleted branch '${branchName}' (was ${oid}).` }];
+    return [
+      { type: "text", value: `Deleted branch '${branchName}' (was ${oid}).` },
+    ];
   },
 } satisfies TerminalUIMap;
 
-// Expected data for each git-command
-const expectedData = {
+// Expected git-command output
+const expectedGitCommandOutput = {
   "branch-list": ["branchList"],
   "branch-create": ["branchName"],
   "branch-delete": ["branchName"],

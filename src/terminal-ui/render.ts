@@ -1,6 +1,6 @@
 import format from "./format.js";
 import { Output, GitCommandId, Data } from "../types.js";
-import {getTerminalUI} from "./terminalUIMap.js";
+import { getTerminalUI } from "./terminalUIMap.js";
 
 export default function renderGitData(id: GitCommandId, data: Data) {
   const { error: outputError, ui: outputs } = getTerminalUI(id, data);

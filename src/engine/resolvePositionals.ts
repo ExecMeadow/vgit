@@ -7,7 +7,7 @@ export default function resolvePositionals(
 ):
   | { error: Error; node?: never; params?: never }
   | { node: GitCommandTree | GitCommand; params: string[]; error?: never } {
-  let currentNode = commandTree;
+  let currentNode: GitCommandTree = commandTree;
   // Traverse command tree.
   for (let i = 0; i < positionals.length; i++) {
     const nextNode = currentNode[positionals[i]];
