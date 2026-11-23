@@ -10,23 +10,27 @@ type GitCommand<Id extends GitCommandId> = {
   description: string;
   usage: string;
   execute(
-    commandInput: GitCommandInput[Id],
+    commandInput: InputOutputContracts[Id]["input"],
     context: EnvironmentContext,
   ): Promise<
-    | { data: GitCommandOutput[Id]; error?: never }
+    | { data: InputOutputContracts[Id]["output"]; error?: never }
     | { error: Error; data?: never }
   >;
 };
 type GitCommandId = "branch-list" | "branch-create" | "branch-delete";
-type GitCommandInput = {
-  "branch-list": { [k in string]: never };
-  "branch-create": { branchName: string };
-  "branch-delete": { branchName: string };
-};
-type GitCommandOutput = {
-  "branch-list": { branchList: string[]; currentBranch: string };
-  "branch-create": { createdBranchName: string };
-  "branch-delete": { deletedBranchName: string; oid: string };
+type InputOutputContracts = {
+  "branch-list": {
+    input: { [k in string]: never };
+    output: { branchList: string[]; currentBranch?: string };
+  };
+  "branch-create": {
+    input: { branchName: string };
+    output: { createdBranchName: string };
+  };
+  "branch-delete": {
+    input: { branchName: string };
+    output: { deletedBranchName: string; oid: string };
+  };
 };
 type EnvironmentContext = {
   dir: string;
@@ -36,8 +40,9 @@ type EnvironmentContext = {
 // Define terminal UI types.
 type TerminalUIMap = {
   [Id in GitCommandId]: {
-    expectedCommandOutputs: string[];
-    present: (commandOutput: GitCommandOutput[Id]) => TerminalOutput[];
+    present: (
+      commandOutput: InputOutputContracts[Id]["output"],
+    ) => TerminalOutput[];
   };
 };
 type TerminalOutput =
@@ -54,10 +59,9 @@ export {
   GitCommandTree,
   GitCommand,
   GitCommandId,
-  GitCommandInput,
-  GitCommandOutput,
   TerminalUIMap,
   TerminalOutput,
   EnvironmentContext,
+  InputOutputContracts,
   Error,
 };

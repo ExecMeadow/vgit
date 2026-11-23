@@ -1,10 +1,14 @@
 import format from "./format.js";
-import { TerminalOutput, GitCommandId, GitCommandOutput } from "../types.js";
+import {
+  TerminalOutput,
+  GitCommandId,
+  InputOutputContracts as IO,
+} from "../types.js";
 import { getTerminalUI } from "./terminalUIMap.js";
 
 export default function renderGitData<Id extends GitCommandId>(
   id: Id,
-  commandOutput: GitCommandOutput[Id],
+  commandOutput: IO[Id]["output"],
 ) {
   const { error: outputError, ui: outputs } = getTerminalUI(id, commandOutput);
   if (outputError) {

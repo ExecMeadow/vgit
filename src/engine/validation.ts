@@ -1,6 +1,16 @@
 // validate.ts
 import { Error, GitCommandTree, GitCommand, GitCommandId } from "../types.js";
 
+/* Utility */
+export const utils = {
+  isObject,
+  hasKeys,
+  hasExactKeys,
+  isString,
+  isArray,
+  isStringArray,
+  isFunction,
+};
 // Object validation
 function isObject(obj: unknown): obj is Record<string, unknown> {
   return typeof obj === "object" && obj !== null && !Array.isArray(obj);
@@ -31,6 +41,11 @@ function isFunction(fun: unknown) {
 }
 
 // UI validation
+export const ui = {
+  isValidTerminalOutputType,
+  isValidTerminalOutput,
+  isTerminalOutputArray,
+};
 function isValidTerminalOutputType(type: unknown): type is string {
   const allowedTypes = ["text", "indentedList", "numberedList"];
   if (!isString(type)) {
@@ -77,6 +92,12 @@ function isTerminalOutputArray(terminalOutputs: unknown[]) {
 }
 
 // Engine validation
+export const engine = {
+  isValidNodeType,
+  isValidNodeDescription,
+  isValidNode,
+  isValidCommandNode,
+};
 function isValidNodeType(type: unknown) {
   if (!isString(type)) {
     return false;
@@ -127,6 +148,38 @@ function isValidCommandNode(node: unknown): boolean {
   }
   if (!isFunction(node.execute)) {
     return false;
+  }
+  return true;
+}
+
+// IO validation
+function isValidInput(input: unknown, commandId: GitCommandId) {
+  if (!isObject(input)) {
+    return false;
+  }
+  switch (commandId) {
+    case "branch-list": {
+      if (!isArray(input.branchList)) {
+        return false;
+      }
+      if (!isStringArray(input.branchList)) {
+        return false;
+      }
+      break;
+    }
+    case "branch-create": {
+      if (!isString(input.branchName)) {
+        return false;
+      }
+      break;
+    }
+    case "branch-delete":
+      {
+        if (!isString(input.branchName)) {
+          return false;
+        }
+      }
+      break;
   }
   return true;
 }

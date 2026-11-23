@@ -1,72 +1,41 @@
 import {
   TerminalUIMap,
   TerminalOutput,
-  GitCommandOutput,
+  InputOutputContracts as IO,
   GitCommandId,
   Error,
 } from "../types.js";
 
+// Function: get terminal UI.
 // given: git-command-id and command output data
 // return: terminal ui or a missing data error
 export function getTerminalUI<Id extends GitCommandId>(
   id: Id,
-  commandOutput: GitCommandOutput[Id],
+  commandOutput: IO[Id]["output"],
 ): { error: Error; ui?: never } | { ui: TerminalOutput[]; error?: never } {
-  const { error: dataError } = getDataStatus(
-    terminalUIMap[id].expectedCommandOutputs,
-    commandOutput,
-  );
-  if (dataError) {
-    return { error: dataError };
-  } else {
-    return { ui: terminalUIMap[id].present(commandOutput) };
-  }
+  return { ui: terminalUIMap[id].present(commandOutput) };
 }
-function getDataStatus(
-  expecting: string[],
-  commandOutput: GitCommandOutput[GitCommandId],
-): { error?: Error } {
-  const missingValues: string[] = [];
-  const noMissingData = expecting.every((element) => {
-    if (element in commandOutput) {
-      return true;
-    } else {
-      missingValues.push(element);
-      return false;
-    }
-  });
-  if (noMissingData) {
-    return {};
-  } else {
-    return {
-      error: {
-        code: "MISSING_DATA",
-        message: `Missing data values: ${missingValues}`,
-      },
-    };
-  }
-}
+
 // UI Map: command-id maps to terminal UI.
 const terminalUIMap: TerminalUIMap = {
   "branch-list": {
-    expectedCommandOutputs: ["branchList"],
-    present: (commandOutput: GitCommandOutput["branch-list"]) => {
+    present: (commandOutput: IO["branch-list"]["output"]) => {
       const { branchList, currentBranch } = commandOutput;
-      const index = branchList.indexOf(currentBranch);
-      branchList[index] = `${currentBranch} (current branch)`;
+      const displayedBranchList = branchList.map((branch) =>
+        currentBranch === branch ? `${branch} (current branch)` : branch,
+      );
       return [
         { type: "text", value: "Branches:" },
         {
           type: "text",
-          value: `${branchList.length} branch${branchList.length === 1 ? "" : "es"} found.`,
+          value: `${displayedBranchList.length} branch${displayedBranchList.length === 1 ? "" : "es"} found.`,
         },
-        { type: "indentedList", values: branchList },
+        { type: "indentedList", values: displayedBranchList },
       ];
     },
   },
   "branch-create": {
-    expectedCommandOutputs: ["createdBranchName"],
-    present: (commandOutput: GitCommandOutput["branch-create"]) => {
+    present: (commandOutput: IO["branch-create"]["output"]) => {
       const { createdBranchName } = commandOutput;
       return [
         { type: "text", value: `Created branch '${createdBranchName}'.` },
@@ -74,8 +43,7 @@ const terminalUIMap: TerminalUIMap = {
     },
   },
   "branch-delete": {
-    expectedCommandOutputs: ["deletedBranchName"],
-    present: (commandOutput: GitCommandOutput["branch-delete"]) => {
+    present: (commandOutput: IO["branch-delete"]["output"]) => {
       const { deletedBranchName, oid } = commandOutput;
       return [
         {

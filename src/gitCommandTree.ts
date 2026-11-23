@@ -1,19 +1,19 @@
 import git from "isomorphic-git";
 import {
-  GitCommandInput,
-  GitCommandOutput,
+  InputOutputContracts as IO,
   GitCommandTree,
   EnvironmentContext as EnvContext,
   Error,
 } from "./types.js";
+import { utils } from "./engine/validation.js";
 
 // Git Command Registry
 const branch = {
   async list(
-    commandInput: GitCommandInput["branch-list"],
+    commandInput: IO["branch-list"]["input"],
     context: EnvContext,
   ): Promise<
-    | { data: GitCommandOutput["branch-list"]; error?: never }
+    | { data: IO["branch-list"]["output"]; error?: never }
     | { error: Error; data?: never }
   > {
     const { dir, fs } = context;
@@ -32,10 +32,10 @@ const branch = {
     }
   },
   async create(
-    commandInput: GitCommandInput["branch-create"],
+    commandInput: IO["branch-create"]["input"],
     context: EnvContext,
   ): Promise<
-    | { data: GitCommandOutput["branch-create"]; error?: never }
+    | { data: IO["branch-create"]["output"]; error?: never }
     | { error: Error; data?: never }
   > {
     const { dir, fs } = context;
@@ -48,10 +48,10 @@ const branch = {
     }
   },
   async delete(
-    commandInput: GitCommandInput["branch-delete"],
+    commandInput: IO["branch-delete"]["input"],
     context: EnvContext,
   ): Promise<
-    | { data: GitCommandOutput["branch-delete"]; error?: never }
+    | { data: IO["branch-delete"]["output"]; error?: never }
     | { error: Error; data?: never }
   > {
     const { dir, fs } = context;
@@ -121,3 +121,24 @@ export default {
   },
  */
 } satisfies GitCommandTree;
+
+export const inputOutputContracts = {
+  "branch-list": {
+    input: {},
+    output: {
+      branchList: { required: true, isValid: utils.isStringArray },
+      currentBranch: { required: false, isValid: utils.isString },
+    },
+  },
+  "branch-create": {
+    input: { branchName: { required: true, isValid: utils.isString } },
+    output: { createdBranchName: { required: true, isValid: utils.isString } },
+  },
+  "branch-delete": {
+    input: { branchName: { required: true, isValid: utils.isString } },
+    output: {
+      deletedBranchName: { required: true, isValid: utils.isString },
+      oid: { required: true, isValid: utils.isString },
+    },
+  },
+};
