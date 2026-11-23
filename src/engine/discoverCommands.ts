@@ -4,21 +4,29 @@ export default function discoverCommands(
   node: GitCommandTree,
   path: string[] = [],
 ): string[] {
-  // halt at leaf, don't traverse!
-  const keyValuePairs = Object.entries(node);
-  const commands: string[] = keyValuePairs.flatMap((pair) => {
+  const commands = recurseCommandTree(node, path);
+  return commands;
+}
+
+function recurseCommandTree(
+  tree: GitCommandTree,
+  path: string[] = [],
+): string[] {
+  // Traverse command tree.
+  const keyValuePairs = Object.entries(tree);
+  return keyValuePairs.flatMap((pair) => {
     const [key, nextNode] = pair;
-    // Build command.
     const currentPath = [...path, key];
+    // Skip properties.
     if (!nextNode || typeof nextNode === "string") {
       return [];
     }
     // Halt once command is detected.
     if (nextNode.type === "command") {
       return [currentPath.join(" ")];
+    } else {
+      // Continue traversing.
+      return recurseCommandTree(nextNode, currentPath);
     }
-    // Continue traversing.
-    return discoverCommands(nextNode, currentPath);
   });
-  return commands;
 }

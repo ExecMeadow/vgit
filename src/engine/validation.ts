@@ -31,8 +31,21 @@ function isFunction(fun: unknown) {
 }
 
 // UI validation
+function isValidTerminalOutputType(type: unknown): type is string {
+  const allowedTypes = ["text", "indentedList", "numberedList"];
+  if (!isString(type)) {
+    return false;
+  }
+  if (!(type in allowedTypes)) {
+    return false;
+  }
+  return true;
+}
 function isValidTerminalOutput(terminalOutput: unknown) {
   if (!isObject(terminalOutput)) {
+    return false;
+  }
+  if (!isValidTerminalOutputType(terminalOutput.type)) {
     return false;
   }
   if (terminalOutput.type === "text") {
@@ -63,8 +76,23 @@ function isTerminalOutputArray(terminalOutputs: unknown[]) {
   return terminalOutputs.every((output) => isValidTerminalOutput(output));
 }
 
-// engine validation
-function isNode(
+// Engine validation
+function isValidNodeType(type: unknown) {
+  if (!isString(type)) {
+    return false;
+  }
+  if (type !== "group" && type !== "command") {
+    return false;
+  }
+  return true;
+}
+function isValidNodeDescription(description: unknown) {
+  if (!isString(description)) {
+    return false;
+  }
+  return true;
+}
+function isValidNode(
   node: unknown,
 ): node is GitCommandTree | GitCommand<GitCommandId> {
   if (!isObject(node)) {
@@ -73,37 +101,31 @@ function isNode(
   if (!hasKeys(node, ["type", "description"])) {
     return false;
   }
+  if (!isValidNodeType(node.type)) {
+    return false;
+  }
+  if (!isValidNodeDescription(node.description)) {
+    return false;
+  }
   return true;
 }
-function isGitCommand(node: unknown): boolean {
-  if (!isObject(node)) {
+function isValidCommandNode(node: unknown): boolean {
+  if (!isValidNode(node)) {
     return false;
   }
-  if (!hasExactKeys(node, ["type", "id", "description", "usage", "execute"])) {
-    return false;
-  }
-  if (node.type !== "command") {
+  if (!hasExactKeys(node, ["id", "type", "description", "usage", "execute"])) {
     return false;
   }
   if (!isString(node.id)) {
     return false;
   }
-  if (!isString(node.description)) {
+  if (node.type !== "command") {
     return false;
   }
   if (!isString(node.usage)) {
     return false;
   }
   if (!isFunction(node.execute)) {
-    return false;
-  }
-  return true;
-}
-function isGroupNode(node: unknown) {
-  if (!isNode(node)) {
-    return false;
-  }
-  if (node.type !== "group") {
     return false;
   }
   return true;
@@ -121,15 +143,62 @@ export const verify = {
     }
     return {};
   },
-  isValidCommandTree(node: unknown): { error?: Error } {
-    if (!isGitCommand(node) && !isGroupNode(node)) {
+  isValidCommandTree(tree: unknown): { error?: Error } {
+    if (!isValidNode(tree)) {
       return {
         error: {
           code: "INVALID_TREE",
-          message: "Implementation error. Git command tree is invalid.",
+          message: `Expected a valid node, Received: ${tree}`,
         },
       };
+    }
+    if (tree.type === "command") {
+      return {
+        error: {
+          code: "INVALID_TREE",
+          message: `Received node of type command instead of group.`,
+        },
+      };
+    }
+    const { error: treeError } = recurseCommandTree(tree);
+    if (treeError) {
+      return { error: treeError };
     }
     return {};
   },
 };
+
+function recurseCommandTree(tree: GitCommandTree): { error?: Error } {
+  // Traverse command tree.
+  const nextNodesArray = Object.values(tree);
+  for (const nextNode of nextNodesArray) {
+    // Skip properties.
+    if (!nextNode || typeof nextNode === "string") {
+      continue;
+    }
+    // Halt once command is detected.
+    if (nextNode.type === "command") {
+      if (!isValidCommandNode(nextNode)) {
+        return {
+          error: {
+            code: "INVALID_TREE",
+            message: `Invalid command node: ${nextNode}`,
+          },
+        };
+      }
+      continue;
+    } else {
+      if (!isValidNode(nextNode)) {
+        return {
+          error: {
+            code: "INVALID_TREE",
+            message: `Invalid group node: ${nextNode}`,
+          },
+        };
+      }
+      // Continue traversing.
+      return recurseCommandTree(nextNode);
+    }
+  } // End of Traversal.
+  return {};
+}

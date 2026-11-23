@@ -15,6 +15,16 @@ import renderGitData, {
 import discoverCommands from "./engine/discoverCommands.js";
 import fs from "node:fs";
 
+import { verify } from "./engine/validation.js";
+import gitCommandTree from "./gitCommandTree.js";
+
+// validate git command tree.
+const { error: treeError } = verify.isValidCommandTree(gitCommandTree);
+if (treeError) {
+  console.error("Error: invalid git command tree. " + treeError.message);
+  process.exit(1);
+}
+
 const { positionals, values: flagValues } = parseArgs({
   args: process.argv.slice(2),
   options: {
