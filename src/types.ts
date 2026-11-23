@@ -2,34 +2,45 @@
 type GitCommandTree = {
   type: "group";
   description: string;
-  [seg: string]: GitCommandTree | GitCommand | string | undefined;
+  [seg: string]: GitCommandTree | GitCommand<GitCommandId> | string | undefined;
 };
-type GitCommand = {
+type GitCommand<Id extends GitCommandId> = {
   type: "command";
-  id: GitCommandId;
+  id: Id;
   description: string;
   usage: string;
-  execute: (
-    arg0: Data,
-    arg1: EnvironmentContext,
-  ) => Promise<{ data: Data; error?: never } | { error: Error; data?: never }>;
+  execute(
+    commandInput: GitCommandInput[Id],
+    context: EnvironmentContext,
+  ): Promise<
+    | { data: GitCommandOutput[Id]; error?: never }
+    | { error: Error; data?: never }
+  >;
 };
 type GitCommandId = "branch-list" | "branch-create" | "branch-delete";
+type GitCommandInput = {
+  "branch-list": { [k in string]: never };
+  "branch-create": { branchName: string };
+  "branch-delete": { branchName: string };
+};
+type GitCommandOutput = {
+  "branch-list": { branchList: string[]; currentBranch: string };
+  "branch-create": { createdBranchName: string };
+  "branch-delete": { deletedBranchName: string; oid: string };
+};
 type EnvironmentContext = {
-  program: string;
   dir: string;
   fs: typeof import("node:fs");
 };
 
 // Define terminal UI types.
-type TerminalUIMap = Record<GitCommandId, (args: Data) => Output[]>;
-type Data = {
-  branchList?: string[];
-  currentBranch?: string;
-  branchName?: string;
-  [seg: string]: string | string[] | undefined;
+type TerminalUIMap = {
+  [Id in GitCommandId]: {
+    expectedCommandOutputs: string[];
+    present: (commandOutput: GitCommandOutput[Id]) => TerminalOutput[];
+  };
 };
-type Output =
+type TerminalOutput =
   | { type: "text"; value: string }
   | { type: "indentedList" | "numberedList"; values: string[] };
 
@@ -40,12 +51,13 @@ type Error = {
 };
 
 export {
-  Data,
   GitCommandTree,
   GitCommand,
   GitCommandId,
-  Output,
-  Error,
+  GitCommandInput,
+  GitCommandOutput,
   TerminalUIMap,
+  TerminalOutput,
   EnvironmentContext,
+  Error,
 };

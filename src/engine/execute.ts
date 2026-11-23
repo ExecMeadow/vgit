@@ -3,15 +3,16 @@ import {
   EnvironmentContext,
   GitCommand,
   GitCommandId,
-  Data,
+  GitCommandInput,
+  GitCommandOutput,
 } from "../types.js";
 
-export default async function execute(
-  command: GitCommand,
-  inputs: Data,
+export default async function execute<Id extends GitCommandId>(
+  command: GitCommand<Id>,
+  inputs: GitCommandInput[Id],
   context: EnvironmentContext,
 ): Promise<
-  | { data: Data; commandId: GitCommandId; error?: never }
+  | { data: GitCommandOutput[Id]; commandId: Id; error?: never }
   | { error: Error; data?: never; commandId?: never }
 > {
   try {

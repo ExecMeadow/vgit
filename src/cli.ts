@@ -3,12 +3,12 @@
 import { parseArgs } from "node:util";
 import packageJson from "../package.json" with { type: "json" };
 
+import { Error } from "./types.js";
+import respondToHelp from "./cli/respondToHelp.js";
+import resolveInputs from "./cli/resolveInputs.js";
 import resolvePositionals from "./engine/resolvePositionals.js";
 import execute from "./engine/execute.js";
-import resolveInputs from "./engine/resolveInputs.js";
 import renderGitData, {
-  renderProgramUsage,
-  renderCommandUsage,
   renderDescription,
   renderAvailableGitCommands,
 } from "./terminal-ui/render.js";
@@ -38,38 +38,30 @@ if (flagValues.version) {
 }
 
 // respond to --help and help
-function respondToHelp(positionals: string[]) {
-  const { error: positionalsError, node } = resolvePositionals(positionals);
-  if (positionalsError) {
-    console.error("Error: " + positionalsError.message);
+function respondToHelpError(error?: Error) {
+  if (error) {
+    console.error("Error: " + error.message);
     process.exit(1);
   }
-  switch (node.type) {
-    case "command": {
-      renderCommandUsage(node.usage);
-      renderDescription(node.description);
-      break;
-    }
-    case "group": {
-      if (positionals.length === 0) {
-        renderProgramUsage();
-      }
-      const commands = discoverCommands(node);
-      renderAvailableGitCommands(commands);
-    }
-  }
-  process.exit(0);
 }
 if (flagValues.help || positionals.length === 0) {
-  respondToHelp(positionals);
+  const { error: helpError } = respondToHelp(positionals);
+  respondToHelpError(helpError);
+  process.exit(0);
 } else if (positionals[0] === "help") {
-  respondToHelp(positionals.slice(1));
+  const { error: helpError } = respondToHelp(positionals.slice(1));
+  respondToHelpError(helpError);
+  process.exit(0);
 } else if (positionals[positionals.length - 1] === "help") {
-  respondToHelp(positionals.slice(0, positionals.length - 1));
+  const { error: helpError } = respondToHelp(
+    positionals.slice(0, positionals.length - 1),
+  );
+  respondToHelpError(helpError);
+  process.exit(0);
 }
 
 // CORE LOGIC
-const context = { program: "vgit", dir: process.cwd(), fs };
+const context = { dir: process.cwd(), fs };
 const {
   error: positionalsError,
   node,

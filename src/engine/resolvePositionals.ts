@@ -1,13 +1,19 @@
-import { GitCommandTree, GitCommand, Error } from "../types.js";
-
+import { GitCommandTree, GitCommand, GitCommandId, Error } from "../types.js";
+import { verify } from "./validation.js";
 import commandTree from "../gitCommandTree.js";
 
-export default function resolvePositionals(
-  positionals: string[],
-):
+export default function resolvePositionals(positionals: string[]):
   | { error: Error; node?: never; params?: never }
-  | { node: GitCommandTree | GitCommand; params: string[]; error?: never } {
+  | {
+      node: GitCommandTree | GitCommand<GitCommandId>;
+      params: string[];
+      error?: never;
+    } {
   let currentNode: GitCommandTree = commandTree;
+  const { error: nodeError } = verify.isValidCommandTree(currentNode);
+  if (nodeError) {
+    return { error: nodeError };
+  }
   // Traverse command tree.
   for (let i = 0; i < positionals.length; i++) {
     const nextNode = currentNode[positionals[i]];

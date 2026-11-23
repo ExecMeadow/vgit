@@ -1,9 +1,12 @@
 import format from "./format.js";
-import { Output, GitCommandId, Data } from "../types.js";
+import { TerminalOutput, GitCommandId, GitCommandOutput } from "../types.js";
 import { getTerminalUI } from "./terminalUIMap.js";
 
-export default function renderGitData(id: GitCommandId, data: Data) {
-  const { error: outputError, ui: outputs } = getTerminalUI(id, data);
+export default function renderGitData<Id extends GitCommandId>(
+  id: Id,
+  commandOutput: GitCommandOutput[Id],
+) {
+  const { error: outputError, ui: outputs } = getTerminalUI(id, commandOutput);
   if (outputError) {
     return outputError;
   }
@@ -11,13 +14,13 @@ export default function renderGitData(id: GitCommandId, data: Data) {
 }
 
 export function renderAvailableGitCommands(commandList: string[]) {
-  const output: Output[] = [];
+  const output: TerminalOutput[] = [];
   output.push({ type: "text", value: "Available git commands: " });
   output.push({
     type: "text",
     value: `${commandList.length} command${commandList.length === 1 ? "" : "s"} found.`,
   });
-  const commandsOutput: Output = {
+  const commandsOutput: TerminalOutput = {
     type: "indentedList",
     values: commandList,
   };
@@ -25,7 +28,7 @@ export function renderAvailableGitCommands(commandList: string[]) {
 }
 
 export function renderCommandUsage(usage: string) {
-  const commandUsage: Output[] = [
+  const commandUsage: TerminalOutput[] = [
     {
       type: "text",
       value: `Usage: ${usage}\n`,
@@ -42,7 +45,7 @@ export function renderDescription(description: string) {
 }
 
 export function renderProgramUsage() {
-  const programUsage: Output[] = [
+  const programUsage: TerminalOutput[] = [
     { type: "text", value: "Usage: vgit <domain> <action> [--help]" },
     { type: "text", value: "" },
   ];
@@ -50,7 +53,7 @@ export function renderProgramUsage() {
 }
 
 // Render Tool.
-export function renderOutputs(outputs: Output[]) {
+export function renderOutputs(outputs: TerminalOutput[]) {
   for (const element of outputs) {
     if (element.type === "text") {
       print[element.type](element.value);

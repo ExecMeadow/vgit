@@ -1,7 +1,7 @@
 import git from "isomorphic-git";
-import fs from "node:fs";
 import {
-  Data,
+  GitCommandInput,
+  GitCommandOutput,
   GitCommandTree,
   EnvironmentContext as EnvContext,
   Error,
@@ -10,10 +10,13 @@ import {
 // Git Command Registry
 const branch = {
   async list(
-    data: Data,
+    commandInput: GitCommandInput["branch-list"],
     context: EnvContext,
-  ): Promise<{ data: Data; error?: never } | { error: Error; data?: never }> {
-    const { dir } = context;
+  ): Promise<
+    | { data: GitCommandOutput["branch-list"]; error?: never }
+    | { error: Error; data?: never }
+  > {
+    const { dir, fs } = context;
     try {
       // Fetch branch list.
       const branchList = await git.listBranches({ fs, dir });
@@ -28,19 +31,31 @@ const branch = {
       return { error: { code: "FAILED_GIT_COMMAND", message: `${err}` } };
     }
   },
-  async create(data: Data, context: EnvContext) {
-    const { dir } = context;
-    const { branchName } = data;
+  async create(
+    commandInput: GitCommandInput["branch-create"],
+    context: EnvContext,
+  ): Promise<
+    | { data: GitCommandOutput["branch-create"]; error?: never }
+    | { error: Error; data?: never }
+  > {
+    const { dir, fs } = context;
+    const { branchName } = commandInput;
     try {
       await git.branch({ fs, dir, ref: branchName ?? "" });
-      return { data: { branchName } };
+      return { data: { createdBranchName: branchName } };
     } catch (err: unknown) {
       return { error: { code: "FAILED_GIT_COMMAND", message: `${err}` } };
     }
   },
-  async delete(data: Data, context: EnvContext) {
-    const { dir } = context;
-    const { branchName } = data;
+  async delete(
+    commandInput: GitCommandInput["branch-delete"],
+    context: EnvContext,
+  ): Promise<
+    | { data: GitCommandOutput["branch-delete"]; error?: never }
+    | { error: Error; data?: never }
+  > {
+    const { dir, fs } = context;
+    const { branchName } = commandInput;
     try {
       // Retrieve commit hash that this branch is pointing to:
       const objectId = await git.resolveRef({
@@ -49,7 +64,9 @@ const branch = {
         ref: `refs/heads/${branchName}`,
       });
       await git.deleteBranch({ fs, dir, ref: branchName ?? "" });
-      return { data: { branchName, oid: objectId.slice(0, 7) } };
+      return {
+        data: { deletedBranchName: branchName, oid: objectId.slice(0, 7) },
+      };
     } catch (err: unknown) {
       return { error: { code: "FAILED_GIT_COMMAND", message: `${err}` } };
     }

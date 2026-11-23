@@ -1,24 +1,34 @@
-import { Output, Data, Error, GitCommandId, TerminalUIMap } from "../types.js";
+import {
+  TerminalUIMap,
+  TerminalOutput,
+  GitCommandOutput,
+  GitCommandId,
+  Error,
+} from "../types.js";
 
-// given: git-command-id and data
+// given: git-command-id and command output data
 // return: terminal ui or a missing data error
-export function getTerminalUI(
-  id: GitCommandId,
-  data: Data,
-): { error: Error; ui?: never } | { ui: Output[]; error?: never } {
+export function getTerminalUI<Id extends GitCommandId>(
+  id: Id,
+  commandOutput: GitCommandOutput[Id],
+): { error: Error; ui?: never } | { ui: TerminalOutput[]; error?: never } {
   const { error: dataError } = getDataStatus(
-    expectedGitCommandOutput[id],
-    data,
+    terminalUIMap[id].expectedCommandOutputs,
+    commandOutput,
   );
   if (dataError) {
     return { error: dataError };
+  } else {
+    return { ui: terminalUIMap[id].present(commandOutput) };
   }
-  return { ui: terminalUIMap[id](data) };
 }
-function getDataStatus(expecting: string[], data: Data): { error?: Error } {
+function getDataStatus(
+  expecting: string[],
+  commandOutput: GitCommandOutput[GitCommandId],
+): { error?: Error } {
   const missingValues: string[] = [];
   const noMissingData = expecting.every((element) => {
-    if (element in data) {
+    if (element in commandOutput) {
       return true;
     } else {
       missingValues.push(element);
@@ -27,43 +37,52 @@ function getDataStatus(expecting: string[], data: Data): { error?: Error } {
   });
   if (noMissingData) {
     return {};
-  }
-  return {
-    error: {
-      code: "MISSING_DATA",
-      message: `Missing data values: ${missingValues}`,
-    },
-  };
-}
-
-// UI Map
-const terminalUIMap = {
-  "branch-list"(data: { branchList?: string[] }) {
-    const { branchList = [] } = data;
-    return [
-      { type: "text", value: "Branches:" },
-      {
-        type: "text",
-        value: `${branchList.length} branch${branchList.length === 1 ? "" : "es"} found.`,
+  } else {
+    return {
+      error: {
+        code: "MISSING_DATA",
+        message: `Missing data values: ${missingValues}`,
       },
-      { type: "indentedList", values: branchList },
-    ];
+    };
+  }
+}
+// UI Map: command-id maps to terminal UI.
+const terminalUIMap: TerminalUIMap = {
+  "branch-list": {
+    expectedCommandOutputs: ["branchList"],
+    present: (commandOutput: GitCommandOutput["branch-list"]) => {
+      const { branchList, currentBranch } = commandOutput;
+      const index = branchList.indexOf(currentBranch);
+      branchList[index] = `${currentBranch} (current branch)`;
+      return [
+        { type: "text", value: "Branches:" },
+        {
+          type: "text",
+          value: `${branchList.length} branch${branchList.length === 1 ? "" : "es"} found.`,
+        },
+        { type: "indentedList", values: branchList },
+      ];
+    },
   },
-  "branch-create"(data: { branchName?: string }) {
-    const { branchName = "" } = data;
-    return [{ type: "text", value: `Created branch '${branchName}'.` }];
+  "branch-create": {
+    expectedCommandOutputs: ["createdBranchName"],
+    present: (commandOutput: GitCommandOutput["branch-create"]) => {
+      const { createdBranchName } = commandOutput;
+      return [
+        { type: "text", value: `Created branch '${createdBranchName}'.` },
+      ];
+    },
   },
-  "branch-delete"(data: { branchName?: string; oid?: string }) {
-    const { branchName = "", oid = "" } = data;
-    return [
-      { type: "text", value: `Deleted branch '${branchName}' (was ${oid}).` },
-    ];
+  "branch-delete": {
+    expectedCommandOutputs: ["deletedBranchName"],
+    present: (commandOutput: GitCommandOutput["branch-delete"]) => {
+      const { deletedBranchName, oid } = commandOutput;
+      return [
+        {
+          type: "text",
+          value: `Deleted branch '${deletedBranchName}' (was ${oid}).`,
+        },
+      ];
+    },
   },
-} satisfies TerminalUIMap;
-
-// Expected git-command output
-const expectedGitCommandOutput = {
-  "branch-list": ["branchList"],
-  "branch-create": ["branchName"],
-  "branch-delete": ["branchName"],
-} satisfies Record<GitCommandId, string[]>;
+};

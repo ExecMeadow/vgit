@@ -1,27 +1,27 @@
 // validate.ts
-import { Error, Output, GitCommand } from "../types.js";
+import { Error, GitCommandTree, GitCommand, GitCommandId } from "../types.js";
 
 // Object validation
-function isObject(obj: unknown) {
+function isObject(obj: unknown): obj is Record<string, unknown> {
   return typeof obj === "object" && obj !== null && !Array.isArray(obj);
 }
+function hasKeys(obj: object, keys: string[]) {
+  return keys.every((key) => Object.hasOwn(obj, key));
+}
 function hasExactKeys(obj: object, keys: string[]) {
-  return (
-    Object.keys(obj).length === keys.length &&
-    keys.every((key) => Object.hasOwn(obj, key))
-  );
+  return Object.keys(obj).length === keys.length && hasKeys(obj, keys);
 }
 
 // String validation
-function isString(str: unknown) {
+function isString(str: unknown): str is string {
   return typeof str === "string";
 }
 
 // Array validation
-function isArray(arr: unknown) {
+function isArray(arr: unknown): arr is unknown[] {
   return Array.isArray(arr);
 }
-function isStringArray(arr: string[]) {
+function isStringArray(arr: unknown[]) {
   return arr.every((element) => typeof element === "string");
 }
 
@@ -31,37 +31,51 @@ function isFunction(fun: unknown) {
 }
 
 // UI validation
-function isValidOutput(output: Output) {
-  if (!isObject(output)) {
+function isValidTerminalOutput(terminalOutput: unknown) {
+  if (!isObject(terminalOutput)) {
     return false;
   }
-  if (output.type === "text") {
-    if (!hasExactKeys(output, ["type", "value"])) {
+  if (terminalOutput.type === "text") {
+    if (!hasExactKeys(terminalOutput, ["type", "value"])) {
       return false;
     }
-    if (!isString(output.value)) {
+    if (!isString(terminalOutput.value)) {
       return false;
     }
-  } else if (output.type === "indentedList" || output.type === "numberedList") {
-    if (!hasExactKeys(output, ["type", "values"])) {
+  } else if (
+    terminalOutput.type === "indentedList" ||
+    terminalOutput.type === "numberedList"
+  ) {
+    if (!hasExactKeys(terminalOutput, ["type", "values"])) {
       return false;
     }
-    if (!isArray(output.values)) {
+    if (!isArray(terminalOutput.values)) {
       return false;
     }
-    if (!isStringArray(output.values)) {
+    if (!isStringArray(terminalOutput.values)) {
       return false;
     }
   }
 
   return true;
 }
-function isOutputArray(outputs: Output[]) {
-  return outputs.every((output) => isValidOutput(output));
+function isTerminalOutputArray(terminalOutputs: unknown[]) {
+  return terminalOutputs.every((output) => isValidTerminalOutput(output));
 }
 
 // engine validation
-export function isGitCommand(node: GitCommand): boolean {
+function isNode(
+  node: unknown,
+): node is GitCommandTree | GitCommand<GitCommandId> {
+  if (!isObject(node)) {
+    return false;
+  }
+  if (!hasKeys(node, ["type", "description"])) {
+    return false;
+  }
+  return true;
+}
+function isGitCommand(node: unknown): boolean {
   if (!isObject(node)) {
     return false;
   }
@@ -71,7 +85,13 @@ export function isGitCommand(node: GitCommand): boolean {
   if (node.type !== "command") {
     return false;
   }
+  if (!isString(node.id)) {
+    return false;
+  }
   if (!isString(node.description)) {
+    return false;
+  }
+  if (!isString(node.usage)) {
     return false;
   }
   if (!isFunction(node.execute)) {
@@ -79,14 +99,34 @@ export function isGitCommand(node: GitCommand): boolean {
   }
   return true;
 }
+function isGroupNode(node: unknown) {
+  if (!isNode(node)) {
+    return false;
+  }
+  if (node.type !== "group") {
+    return false;
+  }
+  return true;
+}
 
 export const verify = {
-  areValidCommandOutputs(outputs: Output[]): { error?: Error } {
-    if (!isOutputArray(outputs)) {
+  areValidTerminalOutputs(outputs: unknown[]): { error?: Error } {
+    if (!isTerminalOutputArray(outputs)) {
       return {
         error: {
           code: "INVALID_OUTPUT",
           message: `Output array is invalid. Received: ${outputs}`,
+        },
+      };
+    }
+    return {};
+  },
+  isValidCommandTree(node: unknown): { error?: Error } {
+    if (!isGitCommand(node) && !isGroupNode(node)) {
+      return {
+        error: {
+          code: "INVALID_TREE",
+          message: "Implementation error. Git command tree is invalid.",
         },
       };
     }
