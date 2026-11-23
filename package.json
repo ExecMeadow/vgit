@@ -13,13 +13,15 @@
   "license": "MIT",
   "author": "Amira Basyouni",
   "type": "module",
-  "main": "index.js",
   "scripts": {
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "build": "tsc",
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "tsx ./src/cli.ts"
+  },
+  "bin": {
+    "vgit": "./dist/cli.js"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
