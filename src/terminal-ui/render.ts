@@ -31,9 +31,9 @@ export function renderAvailableDomains(domainList: string[]) {
   renderOutputs([...output, domainOutput]);
 }
 
-export function renderAvailableGitCommands(commandList: string[]) {
+export function renderAvailableCommands(commandList: string[]) {
   const output: TerminalOutput[] = [];
-  output.push({ type: "text", value: "Available git commands: " });
+  output.push({ type: "text", value: "Available commands: " });
   output.push({
     type: "text",
     value: `${commandList.length} command${commandList.length === 1 ? "" : "s"} found.`,
@@ -60,15 +60,12 @@ export function renderDomain(domain: string) {
 }
 
 export function renderDescription(description: string) {
-  renderOutputs([
-    { type: "text", value: `Description: ${description}` },
-    { type: "text", value: "" },
-  ]);
+  renderOutputs([{ type: "text", value: `Description: ${description}` }]);
 }
 
 export function renderProgramUsage() {
   const programUsage: TerminalOutput[] = [
-    { type: "text", value: "Usage: vgit <domain> <action> [--help]" },
+    { type: "text", value: "Usage: vgit <domain> [action] [--help]" },
     { type: "text", value: "" },
   ];
   renderOutputs(programUsage);

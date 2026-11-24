@@ -11,7 +11,7 @@ import execute from "./engine/execute.js";
 import renderGitData, {
   renderDomain,
   renderDescription,
-  renderAvailableGitCommands,
+  renderAvailableCommands,
 } from "./terminal-ui/render.js";
 import discoverCommands from "./engine/discoverCommands.js";
 import fs from "node:fs";
@@ -89,7 +89,7 @@ if (positionalsError) {
       const commands = discoverCommands(node, [positionals.join(" ")]);
       renderDomain(positionals[0]);
       renderDescription(node.description);
-      renderAvailableGitCommands(commands);
+      renderAvailableCommands(commands);
       process.exit(1);
       break;
     }

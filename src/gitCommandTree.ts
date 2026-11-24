@@ -8,6 +8,7 @@ import {
 import { utils } from "./engine/validation.js";
 
 // Git Command Registry
+// Branch
 const branch = {
   async list(
     commandInput: IO["branch-list"]["input"],
@@ -25,7 +26,7 @@ const branch = {
       // Return data.
       return {
         data: {
-          branchList: branchList,
+          branchList,
           currentBranch: currentBranch ?? undefined,
         },
       };
@@ -75,10 +76,35 @@ const branch = {
     }
   },
 };
+// Tag
+const tag = {
+  async list(
+    commandInput: IO["tag-list"]["input"],
+    context: EnvContext,
+  ): Promise<
+    | { data: IO["tag-list"]["output"]; error?: never }
+    | { error: Error; data?: never }
+  > {
+    const { dir, fs } = context;
+    try {
+      // Fetch tag list.
+      const tagList = await git.listTags({ fs, dir });
+      // Return data.
+      return {
+        data: {
+          tagList,
+        },
+      };
+      // Catch error.
+    } catch (err: unknown) {
+      return { error: { code: "FAILED_GIT_COMMAND", message: `${err}` } };
+    }
+  },
+};
 
 const program = "vgit";
 // Git Command Tree
-export default {
+const gitCommandTree: GitCommandTree = {
   type: "group",
   description: "Root of git command tree",
   branch: {
@@ -110,20 +136,30 @@ export default {
     //    merge: { leaf },
     //    track: { leaf },
   },
-  /*  stash: {
+  tag: {
+    type: "domain",
+    description: "Manage tags",
+    list: {
+      type: "command",
+      id: "tag-list",
+      description: "List git tags",
+      usage: `${program} tag list`,
+      execute: tag.list,
+    },
+    //  create: { annotated: {}, lightweight: {} },
+    //  delete: {},
+    //  show: {},
+  },
+  /*
+  stash: {
     list: {},
     create: {},
     delete: {},
     apply: {},
   },
-  tag: {
-    list: {},
-    create: { annotated: {}, lightweight: {} },
-    delete: {},
-    show: {},
-  },
  */
-} satisfies GitCommandTree;
+};
+export default gitCommandTree;
 
 export const inputOutputContracts = {
   "branch-list": {
@@ -142,6 +178,12 @@ export const inputOutputContracts = {
     output: {
       deletedBranchName: { required: true, isValid: utils.isString },
       oid: { required: true, isValid: utils.isString },
+    },
+  },
+  "tag-list": {
+    input: {},
+    output: {
+      tagList: { required: true, isValid: utils.isString },
     },
   },
 };

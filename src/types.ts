@@ -17,7 +17,8 @@ type GitCommand<Id extends GitCommandId> = {
     | { error: Error; data?: never }
   >;
 };
-type GitCommandId = "branch-list" | "branch-create" | "branch-delete";
+type GitCommandId =
+  "branch-list" | "branch-create" | "branch-delete" | "tag-list";
 type InputOutputContracts = {
   "branch-list": {
     input: { [k in string]: never };
@@ -30,6 +31,10 @@ type InputOutputContracts = {
   "branch-delete": {
     input: { branchName: string };
     output: { deletedBranchName: string; oid: string };
+  };
+  "tag-list": {
+    input: { [k in string]: never };
+    output: { tagList: string[] };
   };
 };
 type EnvironmentContext = {

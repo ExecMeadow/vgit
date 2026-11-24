@@ -167,13 +167,17 @@ function isValidInput(input: unknown, commandId: GitCommandId) {
       }
       break;
     }
-    case "branch-delete":
-      {
-        if (!isString(input.branchName)) {
-          return false;
-        }
+    case "branch-delete": {
+      if (!isString(input.branchName)) {
+        return false;
       }
       break;
+    }
+    case "tag-list": {
+      break;
+    }
+    default:
+      return false;
   }
   return true;
 }

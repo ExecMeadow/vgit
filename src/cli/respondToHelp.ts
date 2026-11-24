@@ -3,7 +3,7 @@ import {
   renderCommandUsage,
   renderDescription,
   renderProgramUsage,
-  renderAvailableGitCommands,
+  renderAvailableCommands,
   renderAvailableDomains,
 } from "../terminal-ui/render.js";
 import discoverCommands from "../engine/discoverCommands.js";
@@ -31,7 +31,7 @@ export default function respondToHelp(positionals: string[]): {
         renderAvailableDomains(domains);
       } else {
         const commands = discoverCommands(node);
-        renderAvailableGitCommands(commands);
+        renderAvailableCommands(commands);
       }
     }
   }

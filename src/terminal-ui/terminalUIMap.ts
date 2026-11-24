@@ -53,4 +53,17 @@ const terminalUIMap: TerminalUIMap = {
       ];
     },
   },
+  "tag-list": {
+    present: (commandOutput: IO["tag-list"]["output"]) => {
+      const { tagList } = commandOutput;
+      return [
+        { type: "text", value: "Tags:" },
+        {
+          type: "text",
+          value: `${tagList.length} tag${tagList.length === 1 ? "" : "s"} found.`,
+        },
+        { type: "indentedList", values: tagList },
+      ];
+    },
+  },
 };
