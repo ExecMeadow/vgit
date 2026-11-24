@@ -17,6 +17,20 @@ export default function renderGitData<Id extends GitCommandId>(
   renderOutputs(outputs);
 }
 
+export function renderAvailableDomains(domainList: string[]) {
+  const output: TerminalOutput[] = [];
+  output.push({ type: "text", value: "Available domains: " });
+  output.push({
+    type: "text",
+    value: `${domainList.length} domain${domainList.length === 1 ? "" : "s"} found.`,
+  });
+  const domainOutput: TerminalOutput = {
+    type: "indentedList",
+    values: domainList,
+  };
+  renderOutputs([...output, domainOutput]);
+}
+
 export function renderAvailableGitCommands(commandList: string[]) {
   const output: TerminalOutput[] = [];
   output.push({ type: "text", value: "Available git commands: " });
@@ -39,6 +53,10 @@ export function renderCommandUsage(usage: string) {
     },
   ];
   renderOutputs(commandUsage);
+}
+
+export function renderDomain(domain: string) {
+  renderOutputs([{ type: "text", value: `Domain: ${domain}` }]);
 }
 
 export function renderDescription(description: string) {

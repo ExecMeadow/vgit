@@ -9,6 +9,7 @@ import resolveInputs from "./cli/resolveInputs.js";
 import resolvePositionals from "./engine/resolvePositionals.js";
 import execute from "./engine/execute.js";
 import renderGitData, {
+  renderDomain,
   renderDescription,
   renderAvailableGitCommands,
 } from "./terminal-ui/render.js";
@@ -82,9 +83,11 @@ if (positionalsError) {
   process.exit(1);
 } else {
   switch (node.type) {
+    case "domain":
     case "group": {
       // Handle incomplete command.
       const commands = discoverCommands(node, [positionals.join(" ")]);
+      renderDomain(positionals[0]);
       renderDescription(node.description);
       renderAvailableGitCommands(commands);
       process.exit(1);

@@ -51,7 +51,7 @@ function isValidTerminalOutputType(type: unknown): type is string {
   if (!isString(type)) {
     return false;
   }
-  if (!(type in allowedTypes)) {
+  if (!allowedTypes.includes(type)) {
     return false;
   }
   return true;
@@ -102,7 +102,7 @@ function isValidNodeType(type: unknown) {
   if (!isString(type)) {
     return false;
   }
-  if (type !== "group" && type !== "command") {
+  if (type !== "group" && type !== "command" && type !== "domain") {
     return false;
   }
   return true;
@@ -159,12 +159,6 @@ function isValidInput(input: unknown, commandId: GitCommandId) {
   }
   switch (commandId) {
     case "branch-list": {
-      if (!isArray(input.branchList)) {
-        return false;
-      }
-      if (!isStringArray(input.branchList)) {
-        return false;
-      }
       break;
     }
     case "branch-create": {

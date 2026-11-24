@@ -24,7 +24,10 @@ const branch = {
       const currentBranch = await git.currentBranch({ fs, dir });
       // Return data.
       return {
-        data: { branchList: branchList, currentBranch: currentBranch ?? "" },
+        data: {
+          branchList: branchList,
+          currentBranch: currentBranch ?? undefined,
+        },
       };
       // Catch error.
     } catch (err: unknown) {
@@ -79,7 +82,7 @@ export default {
   type: "group",
   description: "Root of git command tree",
   branch: {
-    type: "group",
+    type: "domain",
     description: "Manage branches",
     list: {
       type: "command",

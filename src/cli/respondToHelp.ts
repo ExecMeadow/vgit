@@ -4,8 +4,10 @@ import {
   renderDescription,
   renderProgramUsage,
   renderAvailableGitCommands,
+  renderAvailableDomains,
 } from "../terminal-ui/render.js";
 import discoverCommands from "../engine/discoverCommands.js";
+import discoverDomains from "../engine/discoverDomains.js";
 import { Error } from "../types.js";
 
 // respond to --help and help
@@ -25,9 +27,12 @@ export default function respondToHelp(positionals: string[]): {
     case "group": {
       if (positionals.length === 0) {
         renderProgramUsage();
+        const domains = discoverDomains(node);
+        renderAvailableDomains(domains);
+      } else {
+        const commands = discoverCommands(node);
+        renderAvailableGitCommands(commands);
       }
-      const commands = discoverCommands(node);
-      renderAvailableGitCommands(commands);
     }
   }
   return {};

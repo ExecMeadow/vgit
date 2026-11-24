@@ -20,7 +20,10 @@ export default function resolvePositionals(positionals: string[]):
       });
       return { error };
     }
-    if (typeof nextNode != "string" && nextNode.type === "group") {
+    if (
+      typeof nextNode != "string" &&
+      (nextNode.type === "group" || nextNode.type === "domain")
+    ) {
       // Continue traversing.
       currentNode = nextNode;
     } else if (typeof nextNode !== "string" && nextNode.type === "command") {

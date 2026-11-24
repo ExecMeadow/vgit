@@ -1,6 +1,6 @@
 // Define engine types.
 type GitCommandTree = {
-  type: "group";
+  type: "group" | "domain";
   description: string;
   [seg: string]: GitCommandTree | GitCommand<GitCommandId> | string | undefined;
 };
