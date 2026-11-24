@@ -1,22 +1,17 @@
 import git from "isomorphic-git";
 import {
   InputOutputContracts as IO,
+  IOValidation,
   GitCommandTree,
+  GitCommand,
   EnvironmentContext as EnvContext,
-  Error,
 } from "./types.js";
 import { utils } from "./engine/validation.js";
 
-// Git Command Registry
+/* Git Command Registry */
 // Branch
 const branch = {
-  async list(
-    commandInput: IO["branch-list"]["input"],
-    context: EnvContext,
-  ): Promise<
-    | { data: IO["branch-list"]["output"]; error?: never }
-    | { error: Error; data?: never }
-  > {
+  list: (async (commandInput, context) => {
     const { dir, fs } = context;
     try {
       // Fetch branch list.
@@ -34,14 +29,8 @@ const branch = {
     } catch (err: unknown) {
       return { error: { code: "FAILED_GIT_COMMAND", message: `${err}` } };
     }
-  },
-  async create(
-    commandInput: IO["branch-create"]["input"],
-    context: EnvContext,
-  ): Promise<
-    | { data: IO["branch-create"]["output"]; error?: never }
-    | { error: Error; data?: never }
-  > {
+  }) satisfies GitCommand<"branch-list">["execute"],
+  create: (async (commandInput, context) => {
     const { dir, fs } = context;
     const { branchName } = commandInput;
     try {
@@ -50,14 +39,11 @@ const branch = {
     } catch (err: unknown) {
       return { error: { code: "FAILED_GIT_COMMAND", message: `${err}` } };
     }
-  },
-  async delete(
+  }) satisfies GitCommand<"branch-create">["execute"],
+  delete: (async (
     commandInput: IO["branch-delete"]["input"],
     context: EnvContext,
-  ): Promise<
-    | { data: IO["branch-delete"]["output"]; error?: never }
-    | { error: Error; data?: never }
-  > {
+  ) => {
     const { dir, fs } = context;
     const { branchName } = commandInput;
     try {
@@ -74,17 +60,12 @@ const branch = {
     } catch (err: unknown) {
       return { error: { code: "FAILED_GIT_COMMAND", message: `${err}` } };
     }
-  },
+  }) satisfies GitCommand<"branch-delete">["execute"],
 };
+
 // Tag
 const tag = {
-  async list(
-    commandInput: IO["tag-list"]["input"],
-    context: EnvContext,
-  ): Promise<
-    | { data: IO["tag-list"]["output"]; error?: never }
-    | { error: Error; data?: never }
-  > {
+  list: (async (commandInput, context) => {
     const { dir, fs } = context;
     try {
       // Fetch tag list.
@@ -99,11 +80,41 @@ const tag = {
     } catch (err: unknown) {
       return { error: { code: "FAILED_GIT_COMMAND", message: `${err}` } };
     }
+  }) satisfies GitCommand<"tag-list">["execute"],
+};
+
+/* IO Contracts */
+const inputOutputContracts: IOValidation = {
+  "branch-list": {
+    input: {},
+    output: {
+      branchList: { isRequired: true, isValid: utils.isStringArray },
+      currentBranch: { isRequired: false, isValid: utils.isString },
+    },
+  },
+  "branch-create": {
+    input: { branchName: { isRequired: true, isValid: utils.isString } },
+    output: {
+      createdBranchName: { isRequired: true, isValid: utils.isString },
+    },
+  },
+  "branch-delete": {
+    input: { branchName: { isRequired: true, isValid: utils.isString } },
+    output: {
+      deletedBranchName: { isRequired: true, isValid: utils.isString },
+      oid: { isRequired: true, isValid: utils.isString },
+    },
+  },
+  "tag-list": {
+    input: {},
+    output: {
+      tagList: { isRequired: true, isValid: utils.isString },
+    },
   },
 };
 
 const program = "vgit";
-// Git Command Tree
+/* Git Command Tree */
 const gitCommandTree: GitCommandTree = {
   type: "group",
   description: "Root of git command tree",
@@ -115,6 +126,7 @@ const gitCommandTree: GitCommandTree = {
       id: "branch-list",
       description: "List git branches",
       usage: `${program} branch list`,
+      io: inputOutputContracts["branch-list"],
       execute: branch.list,
     },
     create: {
@@ -122,6 +134,7 @@ const gitCommandTree: GitCommandTree = {
       id: "branch-create",
       description: "Create a branch",
       usage: `${program} branch create <branch-name>`,
+      io: inputOutputContracts["branch-create"],
       execute: branch.create,
     },
     delete: {
@@ -129,6 +142,7 @@ const gitCommandTree: GitCommandTree = {
       id: "branch-delete",
       description: "Delete a branch",
       usage: `${program} branch delete <branch-name>`,
+      io: inputOutputContracts["branch-delete"],
       execute: branch.delete,
     },
     //switch: { leaf },
@@ -144,6 +158,7 @@ const gitCommandTree: GitCommandTree = {
       id: "tag-list",
       description: "List git tags",
       usage: `${program} tag list`,
+      io: inputOutputContracts["tag-list"],
       execute: tag.list,
     },
     //  create: { annotated: {}, lightweight: {} },
@@ -160,30 +175,3 @@ const gitCommandTree: GitCommandTree = {
  */
 };
 export default gitCommandTree;
-
-export const inputOutputContracts = {
-  "branch-list": {
-    input: {},
-    output: {
-      branchList: { required: true, isValid: utils.isStringArray },
-      currentBranch: { required: false, isValid: utils.isString },
-    },
-  },
-  "branch-create": {
-    input: { branchName: { required: true, isValid: utils.isString } },
-    output: { createdBranchName: { required: true, isValid: utils.isString } },
-  },
-  "branch-delete": {
-    input: { branchName: { required: true, isValid: utils.isString } },
-    output: {
-      deletedBranchName: { required: true, isValid: utils.isString },
-      oid: { required: true, isValid: utils.isString },
-    },
-  },
-  "tag-list": {
-    input: {},
-    output: {
-      tagList: { required: true, isValid: utils.isString },
-    },
-  },
-};

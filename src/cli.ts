@@ -94,7 +94,7 @@ if (positionalsError) {
       break;
     }
     case "command": {
-      const { error: inputError, inputs } = resolveInputs(node.id, params);
+      const { error: inputError, inputs } = resolveInputs(node.io, params);
       if (inputError) {
         console.error("Error: " + inputError.message);
         process.exit(1);

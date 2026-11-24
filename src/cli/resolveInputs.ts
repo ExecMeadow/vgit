@@ -1,13 +1,17 @@
-import { GitCommandId, InputOutputContracts as IO, Error } from "../types.js";
-import { inputOutputContracts } from "../gitCommandTree.js";
+import {
+  GitCommandId,
+  InputOutputContracts as IO,
+  IOValidation,
+  Error,
+} from "../types.js";
 
 export default function resolveInputs<Id extends GitCommandId>(
-  commandId: Id,
+  io: IOValidation[Id],
   params: string[],
 ):
   | { inputs: IO[Id]["input"]; error?: never }
   | { error: Error; inputs?: never } {
-  const inputKeys = Object.keys(inputOutputContracts[commandId].input);
+  const inputKeys = Object.keys(io.input);
   if (params.length !== inputKeys.length) {
     return {
       error: {

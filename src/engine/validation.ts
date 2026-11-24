@@ -134,7 +134,9 @@ function isValidCommandNode(node: unknown): boolean {
   if (!isValidNode(node)) {
     return false;
   }
-  if (!hasExactKeys(node, ["id", "type", "description", "usage", "execute"])) {
+  if (
+    !hasExactKeys(node, ["id", "type", "description", "usage", "io", "execute"])
+  ) {
     return false;
   }
   if (!isString(node.id)) {
@@ -233,7 +235,7 @@ function recurseCommandTree(tree: GitCommandTree): { error?: Error } {
         return {
           error: {
             code: "INVALID_TREE",
-            message: `Invalid command node: ${nextNode}`,
+            message: `Invalid command node: ${JSON.stringify(nextNode)}`,
           },
         };
       }

@@ -9,6 +9,7 @@ type GitCommand<Id extends GitCommandId> = {
   id: Id;
   description: string;
   usage: string;
+  io: IOValidation[Id];
   execute(
     commandInput: InputOutputContracts[Id]["input"],
     context: EnvironmentContext,
@@ -17,8 +18,7 @@ type GitCommand<Id extends GitCommandId> = {
     | { error: Error; data?: never }
   >;
 };
-type GitCommandId =
-  "branch-list" | "branch-create" | "branch-delete" | "tag-list";
+type GitCommandId = keyof InputOutputContracts;
 type InputOutputContracts = {
   "branch-list": {
     input: { [k in string]: never };
@@ -35,6 +35,22 @@ type InputOutputContracts = {
   "tag-list": {
     input: { [k in string]: never };
     output: { tagList: string[] };
+  };
+};
+type IOValidation = {
+  [Id in GitCommandId]: {
+    input: {
+      [K in keyof InputOutputContracts[Id]["input"]]: {
+        isRequired: boolean;
+        isValid: (arg: InputOutputContracts[Id]["input"][K]) => boolean;
+      };
+    };
+    output: {
+      [K in keyof InputOutputContracts[Id]["output"]]: {
+        isRequired: boolean;
+        isValid: (arg: InputOutputContracts[Id]["output"][K]) => boolean;
+      };
+    };
   };
 };
 type EnvironmentContext = {
@@ -68,5 +84,6 @@ export {
   TerminalOutput,
   EnvironmentContext,
   InputOutputContracts,
+  IOValidation,
   Error,
 };
