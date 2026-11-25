@@ -19,13 +19,14 @@ export default function renderGitData<Id extends GitCommandId>(
 
 export function renderAvailableDomains(domainList: string[]) {
   const output: TerminalOutput[] = [];
-  output.push({ type: "text", value: "Available domains: " });
+  output.push({ type: "heading", value: "Available Domains:" });
   output.push({
     type: "text",
     value: `${domainList.length} domain${domainList.length === 1 ? "" : "s"} found.`,
   });
   const domainOutput: TerminalOutput = {
-    type: "indentedList",
+    type: "list",
+    style: "indented",
     values: domainList,
   };
   renderOutputs([...output, domainOutput]);
@@ -33,13 +34,14 @@ export function renderAvailableDomains(domainList: string[]) {
 
 export function renderAvailableCommands(commandList: string[]) {
   const output: TerminalOutput[] = [];
-  output.push({ type: "text", value: "Available commands: " });
+  output.push({ type: "heading", value: "Available Commands:" });
   output.push({
     type: "text",
     value: `${commandList.length} command${commandList.length === 1 ? "" : "s"} found.`,
   });
   const commandsOutput: TerminalOutput = {
-    type: "indentedList",
+    type: "list",
+    style: "indented",
     values: commandList,
   };
   renderOutputs([...output, commandsOutput]);
@@ -48,36 +50,58 @@ export function renderAvailableCommands(commandList: string[]) {
 export function renderCommandUsage(usage: string) {
   const commandUsage: TerminalOutput[] = [
     {
-      type: "text",
-      value: `Usage: ${usage}\n`,
+      type: "label-value",
+      label: "Usage",
+      value: usage,
     },
   ];
   renderOutputs(commandUsage);
 }
 
+export function renderNewLine() {
+  renderOutputs([{ type: "text", value: "" }]);
+}
+
 export function renderDomain(domain: string) {
-  renderOutputs([{ type: "text", value: `Domain: ${domain}` }]);
+  renderOutputs([{ type: "label-value", label: "Domain", value: domain }]);
 }
 
 export function renderDescription(description: string) {
-  renderOutputs([{ type: "text", value: `Description: ${description}` }]);
+  renderOutputs([
+    { type: "label-value", label: "Description", value: description },
+  ]);
 }
 
 export function renderProgramUsage() {
-  const programUsage: TerminalOutput[] = [
-    { type: "text", value: "Usage: vgit <domain> [action] [--help]" },
-    { type: "text", value: "" },
-  ];
-  renderOutputs(programUsage);
+  renderOutputs([
+    {
+      type: "label-value",
+      label: "Usage",
+      value: "vgit <domain> [action] [--help]",
+    },
+  ]);
 }
 
 // Render Tool.
 export function renderOutputs(outputs: TerminalOutput[]) {
   for (const element of outputs) {
-    if (element.type === "text") {
-      print[element.type](element.value);
-    } else {
-      print[element.type](element.values);
+    if (element.type === "text" && element.style === "indented") {
+      print.indentedText(element.value);
+    } else if (element.type === "heading" || element.type === "text") {
+      print.text(element.value);
+    } else if (element.type === "list") {
+      switch (element.style) {
+        case "numbered": {
+          print.numberedList(element.values);
+          break;
+        }
+        case "indented": {
+          print.indentedList(element.values);
+          break;
+        }
+      }
+    } else if (element.type === "label-value") {
+      print.labelValue(element.label, element.value);
     }
   }
 }
@@ -87,11 +111,17 @@ const print = {
   text(message: string) {
     console.log(message);
   },
+  indentedText(message: string) {
+    console.log(" " + message);
+  },
   numberedList(items: string[]) {
     console.log(format.numberedList(items, 1));
   },
   indentedList(items: string[]) {
     console.log(format.indentedList(items, 1));
+  },
+  labelValue(label: string, value: string) {
+    console.log(label + ": " + value);
   },
   table() {},
 };

@@ -1,6 +1,6 @@
 // Define engine types.
 type GitCommandTree = {
-  type: "group" | "domain";
+  type: "group" | "domain" | "root";
   description: string;
   [seg: string]: GitCommandTree | GitCommand<GitCommandId> | string | undefined;
 };
@@ -67,8 +67,10 @@ type TerminalUIMap = {
   };
 };
 type TerminalOutput =
-  | { type: "text"; value: string }
-  | { type: "indentedList" | "numberedList"; values: string[] };
+  | { type: "text"; style?: string; value: string }
+  | { type: "heading"; value: string }
+  | { type: "list"; style: "indented" | "numbered"; values: string[] }
+  | { type: "label-value"; label: string; value: string };
 
 // Define Generic error.
 type Error = {

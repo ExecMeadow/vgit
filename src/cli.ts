@@ -12,20 +12,33 @@ import renderGitData, {
   renderDomain,
   renderDescription,
   renderAvailableCommands,
+  renderNewLine,
 } from "./terminal-ui/render.js";
 import discoverCommands from "./engine/discoverCommands.js";
 import fs from "node:fs";
 
-import { verify } from "./engine/validation.js";
-import gitCommandTree from "./gitCommandTree.js";
+import { verify as engineVerify } from "./engine/validation.js";
+import { verify as uiVerify } from "./terminal-ui/validation.js";
+import gitCommandTree, { inputOutputContracts } from "./gitCommandTree.js";
+import terminalUIMap from "./terminal-ui/terminalUIMap.js";
 
-// validate git command tree.
-const { error: treeError } = verify.isValidCommandTree(gitCommandTree);
+// Validate git command tree.
+const { error: treeError } = engineVerify.isValidCommandTree(gitCommandTree);
 if (treeError) {
   console.error("Error: invalid git command tree. " + treeError.message);
   process.exit(1);
 }
+// validate terminal UI map.
+const { error: uiError } = uiVerify.isValidTerminalUIMap(
+  terminalUIMap,
+  inputOutputContracts,
+);
+if (uiError) {
+  console.error("Error: invalid terminal UI map. " + uiError.message);
+  process.exit(1);
+}
 
+// Start CLI.
 const { positionals, values: flagValues } = parseArgs({
   args: process.argv.slice(2),
   options: {
@@ -89,12 +102,16 @@ if (positionalsError) {
       const commands = discoverCommands(node, [positionals.join(" ")]);
       renderDomain(positionals[0]);
       renderDescription(node.description);
+      renderNewLine();
       renderAvailableCommands(commands);
       process.exit(1);
       break;
     }
     case "command": {
-      const { error: inputError, inputs } = resolveInputs(node.io, params);
+      const { error: inputError, userInput } = resolveInputs(
+        node.io.input,
+        params,
+      );
       if (inputError) {
         console.error("Error: " + inputError.message);
         process.exit(1);
@@ -104,7 +121,7 @@ if (positionalsError) {
         error: executionError,
         data,
         commandId,
-      } = await execute(node, inputs, context);
+      } = await execute(node, userInput, context);
       if (executionError) {
         console.error("Error: " + executionError.message);
         process.exit(1);

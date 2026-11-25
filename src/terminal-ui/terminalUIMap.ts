@@ -25,12 +25,12 @@ const terminalUIMap: TerminalUIMap = {
         currentBranch === branch ? `${branch} (current branch)` : branch,
       );
       return [
-        { type: "text", value: "Branches:" },
+        { type: "heading", value: "Branches:" },
         {
           type: "text",
           value: `${displayedBranchList.length} branch${displayedBranchList.length === 1 ? "" : "es"} found.`,
         },
-        { type: "indentedList", values: displayedBranchList },
+        { type: "list", style: "indented", values: displayedBranchList },
       ];
     },
   },
@@ -57,13 +57,14 @@ const terminalUIMap: TerminalUIMap = {
     present: (commandOutput: IO["tag-list"]["output"]) => {
       const { tagList } = commandOutput;
       return [
-        { type: "text", value: "Tags:" },
+        { type: "heading", value: "Tags:" },
         {
           type: "text",
           value: `${tagList.length} tag${tagList.length === 1 ? "" : "s"} found.`,
         },
-        { type: "indentedList", values: tagList },
+        { type: "list", style: "indented", values: tagList },
       ];
     },
   },
 };
+export default terminalUIMap;

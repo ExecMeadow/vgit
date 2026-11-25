@@ -84,7 +84,7 @@ const tag = {
 };
 
 /* IO Contracts */
-const inputOutputContracts: IOValidation = {
+export const inputOutputContracts: IOValidation = {
   "branch-list": {
     input: {},
     output: {
@@ -116,7 +116,7 @@ const inputOutputContracts: IOValidation = {
 const program = "vgit";
 /* Git Command Tree */
 const gitCommandTree: GitCommandTree = {
-  type: "group",
+  type: "root",
   description: "Root of git command tree",
   branch: {
     type: "domain",

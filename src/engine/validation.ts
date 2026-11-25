@@ -1,5 +1,11 @@
 // validate.ts
-import { Error, GitCommandTree, GitCommand, GitCommandId } from "../types.js";
+import {
+  Error,
+  GitCommandTree,
+  GitCommand,
+  GitCommandId,
+  IOValidation,
+} from "../types.js";
 
 /* Utility */
 export const utils = {
@@ -15,10 +21,10 @@ export const utils = {
 function isObject(obj: unknown): obj is Record<string, unknown> {
   return typeof obj === "object" && obj !== null && !Array.isArray(obj);
 }
-function hasKeys(obj: object, keys: string[]) {
+function hasKeys(obj: Record<string, unknown>, keys: string[]) {
   return keys.every((key) => Object.hasOwn(obj, key));
 }
-function hasExactKeys(obj: object, keys: string[]) {
+function hasExactKeys(obj: Record<string, unknown>, keys: string[]) {
   return Object.keys(obj).length === keys.length && hasKeys(obj, keys);
 }
 
@@ -40,57 +46,6 @@ function isFunction(fun: unknown) {
   return typeof fun === "function";
 }
 
-// UI validation
-export const ui = {
-  isValidTerminalOutputType,
-  isValidTerminalOutput,
-  isTerminalOutputArray,
-};
-function isValidTerminalOutputType(type: unknown): type is string {
-  const allowedTypes = ["text", "indentedList", "numberedList"];
-  if (!isString(type)) {
-    return false;
-  }
-  if (!allowedTypes.includes(type)) {
-    return false;
-  }
-  return true;
-}
-function isValidTerminalOutput(terminalOutput: unknown) {
-  if (!isObject(terminalOutput)) {
-    return false;
-  }
-  if (!isValidTerminalOutputType(terminalOutput.type)) {
-    return false;
-  }
-  if (terminalOutput.type === "text") {
-    if (!hasExactKeys(terminalOutput, ["type", "value"])) {
-      return false;
-    }
-    if (!isString(terminalOutput.value)) {
-      return false;
-    }
-  } else if (
-    terminalOutput.type === "indentedList" ||
-    terminalOutput.type === "numberedList"
-  ) {
-    if (!hasExactKeys(terminalOutput, ["type", "values"])) {
-      return false;
-    }
-    if (!isArray(terminalOutput.values)) {
-      return false;
-    }
-    if (!isStringArray(terminalOutput.values)) {
-      return false;
-    }
-  }
-
-  return true;
-}
-function isTerminalOutputArray(terminalOutputs: unknown[]) {
-  return terminalOutputs.every((output) => isValidTerminalOutput(output));
-}
-
 // Engine validation
 export const engine = {
   isValidNodeType,
@@ -102,7 +57,12 @@ function isValidNodeType(type: unknown) {
   if (!isString(type)) {
     return false;
   }
-  if (type !== "group" && type !== "command" && type !== "domain") {
+  if (
+    type !== "group" &&
+    type !== "command" &&
+    type !== "domain" &&
+    type !== "root"
+  ) {
     return false;
   }
   return true;
@@ -130,7 +90,7 @@ function isValidNode(
   }
   return true;
 }
-function isValidCommandNode(node: unknown): boolean {
+function isValidCommandNode(node: unknown) {
   if (!isValidNode(node)) {
     return false;
   }
@@ -148,54 +108,53 @@ function isValidCommandNode(node: unknown): boolean {
   if (!isString(node.usage)) {
     return false;
   }
+  if (!isValidIO(node.io)) {
+    return false;
+  }
   if (!isFunction(node.execute)) {
     return false;
   }
   return true;
 }
 
-// IO validation
-function isValidInput(input: unknown, commandId: GitCommandId) {
-  if (!isObject(input)) {
+// Command IO validation
+function isValidIO(io: unknown) {
+  if (!isObject(io)) {
     return false;
   }
-  switch (commandId) {
-    case "branch-list": {
-      break;
-    }
-    case "branch-create": {
-      if (!isString(input.branchName)) {
-        return false;
-      }
-      break;
-    }
-    case "branch-delete": {
-      if (!isString(input.branchName)) {
-        return false;
-      }
-      break;
-    }
-    case "tag-list": {
-      break;
-    }
-    default:
+  if (!hasExactKeys(io, ["input", "output"])) {
+    return false;
+  }
+  if (!isObject(io.input)) {
+    return false;
+  }
+  if (!isObject(io.output)) {
+    return false;
+  }
+  return true;
+}
+function isValidUserInput<Id extends GitCommandId>(
+  userInput: unknown,
+  expectedInput: IOValidation[Id]["input"],
+) {
+  if (!isObject(userInput)) {
+    return false;
+  }
+  const inputEntries = Object.entries(expectedInput);
+  for (const [key, entry] of inputEntries) {
+    // required and exists
+    if (entry.isRequired && !userInput[key]) {
       return false;
+    }
+    // valid regardless required or not
+    if (!entry.isValid(userInput[key])) {
+      return false;
+    }
   }
   return true;
 }
 
 export const verify = {
-  areValidTerminalOutputs(outputs: unknown[]): { error?: Error } {
-    if (!isTerminalOutputArray(outputs)) {
-      return {
-        error: {
-          code: "INVALID_OUTPUT",
-          message: `Output array is invalid. Received: ${outputs}`,
-        },
-      };
-    }
-    return {};
-  },
   isValidCommandTree(tree: unknown): { error?: Error } {
     if (!isValidNode(tree)) {
       return {
@@ -219,9 +178,26 @@ export const verify = {
     }
     return {};
   },
+  isValidUserInput(
+    userInput: unknown,
+    expectedInput: IOValidation[GitCommandId]["input"],
+  ) {
+    const isValid = isValidUserInput(userInput, expectedInput);
+    if (!isValid) {
+      return {
+        error: {
+          code: "INVALID_USER_INPUT",
+          message: `Invalid user input. Expected: ${JSON.stringify(expectedInput)} Received: ${JSON.stringify(userInput)}`,
+        },
+      };
+    }
+    return {};
+  },
 };
 
+// Utility
 function recurseCommandTree(tree: GitCommandTree): { error?: Error } {
+  const commandIDs = [];
   // Traverse command tree.
   const nextNodesArray = Object.values(tree);
   for (const nextNode of nextNodesArray) {
@@ -239,6 +215,7 @@ function recurseCommandTree(tree: GitCommandTree): { error?: Error } {
           },
         };
       }
+      commandIDs.push(nextNode.id);
       continue;
     } else {
       if (!isValidNode(nextNode)) {
@@ -253,5 +230,11 @@ function recurseCommandTree(tree: GitCommandTree): { error?: Error } {
       return recurseCommandTree(nextNode);
     }
   } // End of Traversal.
+  const isUniqueList = (list: string[]) => new Set(list).size === list.length;
+  if (!isUniqueList(commandIDs)) {
+    return {
+      error: { code: "INVALID_ID", message: "Command IDs are not unique." },
+    };
+  }
   return {};
 }

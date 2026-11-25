@@ -5,6 +5,8 @@ import {
   renderProgramUsage,
   renderAvailableCommands,
   renderAvailableDomains,
+  renderNewLine,
+  renderDomain,
 } from "../terminal-ui/render.js";
 import discoverCommands from "../engine/discoverCommands.js";
 import discoverDomains from "../engine/discoverDomains.js";
@@ -24,15 +26,21 @@ export default function respondToHelp(positionals: string[]): {
       renderDescription(node.description);
       break;
     }
-    case "group": {
-      if (positionals.length === 0) {
-        renderProgramUsage();
-        const domains = discoverDomains(node);
-        renderAvailableDomains(domains);
-      } else {
-        const commands = discoverCommands(node);
-        renderAvailableCommands(commands);
-      }
+    case "root": {
+      renderProgramUsage();
+      renderNewLine();
+      const domains = discoverDomains(node);
+      renderAvailableDomains(domains);
+      break;
+    }
+    case "group":
+    case "domain": {
+      renderDomain(positionals[0]);
+      renderDescription(node.description);
+      renderNewLine();
+      const commands = discoverCommands(node, [positionals[0]]);
+      renderAvailableCommands(commands);
+      break;
     }
   }
   return {};

@@ -5,24 +5,34 @@ import {
   Error,
 } from "../types.js";
 
+import { verify } from "../engine/validation.js";
+
 export default function resolveInputs<Id extends GitCommandId>(
-  io: IOValidation[Id],
+  expectedInput: IOValidation[Id]["input"],
   params: string[],
 ):
-  | { inputs: IO[Id]["input"]; error?: never }
-  | { error: Error; inputs?: never } {
-  const inputKeys = Object.keys(io.input);
-  if (params.length !== inputKeys.length) {
+  | { userInput: IO[Id]["input"]; error?: never }
+  | { error: Error; userInput?: never } {
+  const expectedInputKeys = Object.keys(expectedInput);
+  if (params.length > expectedInputKeys.length) {
     return {
       error: {
         code: "INVALID_INPUT",
-        message: `Invalid input. Expected number of inputs: ${inputKeys.length}. Received: ${params.length}.`,
+        message: `Invalid input. Expected number of inputs: ${expectedInputKeys.length}. Received: ${params.length}.`,
       },
     };
   }
-  const keyValuePairs = inputKeys.map((inputKey, i) => {
+
+  const keyValuePairs = expectedInputKeys.map((inputKey, i) => {
     return [inputKey, params[i]];
   });
-  const inputs: IO[Id]["input"] = Object.fromEntries(keyValuePairs);
-  return { inputs };
+  const userInput: IO[Id]["input"] = Object.fromEntries(keyValuePairs);
+  const { error: inputError } = verify.isValidUserInput(
+    userInput,
+    expectedInput,
+  );
+  if (inputError) {
+    return { error: inputError };
+  }
+  return { userInput };
 }
