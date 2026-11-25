@@ -5,7 +5,7 @@ import {
   TerminalOutput,
 } from "../types.js";
 
-import { utils } from "../engine/validation.js";
+import { utils } from "../validation.js";
 const {
   isObject,
   hasKeys,
@@ -23,7 +23,7 @@ export const ui = {
   isTerminalOutputArray,
 };
 function isValidTerminalOutputType(type: unknown): type is string {
-  const allowedTypes = ["text", "list"];
+  const allowedTypes = ["text", "heading", "list", "label-value"];
   if (!isString(type)) {
     return false;
   }

@@ -7,44 +7,16 @@ import {
   IOValidation,
 } from "../types.js";
 
-/* Utility */
-export const utils = {
+import { utils } from "../validation.js";
+const {
   isObject,
   hasKeys,
   hasExactKeys,
   isString,
-  isArray,
-  isStringArray,
+  //isArray,
+  //isStringArray,
   isFunction,
-};
-// Object validation
-function isObject(obj: unknown): obj is Record<string, unknown> {
-  return typeof obj === "object" && obj !== null && !Array.isArray(obj);
-}
-function hasKeys(obj: Record<string, unknown>, keys: string[]) {
-  return keys.every((key) => Object.hasOwn(obj, key));
-}
-function hasExactKeys(obj: Record<string, unknown>, keys: string[]) {
-  return Object.keys(obj).length === keys.length && hasKeys(obj, keys);
-}
-
-// String validation
-function isString(str: unknown): str is string {
-  return typeof str === "string";
-}
-
-// Array validation
-function isArray(arr: unknown): arr is unknown[] {
-  return Array.isArray(arr);
-}
-function isStringArray(arr: unknown[]) {
-  return arr.every((element) => typeof element === "string");
-}
-
-// function validation
-function isFunction(fun: unknown) {
-  return typeof fun === "function";
-}
+} = utils;
 
 // Engine validation
 export const engine = {
@@ -196,39 +168,39 @@ export const verify = {
 };
 
 // Utility
-function recurseCommandTree(tree: GitCommandTree): { error?: Error } {
-  const commandIDs = [];
+function recurseCommandTree(
+  tree: GitCommandTree,
+  commandIDs: string[] = [],
+): { error?: Error } {
   // Traverse command tree.
   const nextNodesArray = Object.values(tree);
-  for (const nextNode of nextNodesArray) {
+  for (const node of nextNodesArray) {
     // Skip properties.
-    if (!nextNode || typeof nextNode === "string") {
+    if (!node || typeof node === "string") {
       continue;
     }
     // Halt once command is detected.
-    if (nextNode.type === "command") {
-      if (!isValidCommandNode(nextNode)) {
+    if (node.type === "command") {
+      if (!isValidCommandNode(node)) {
         return {
           error: {
-            code: "INVALID_TREE",
-            message: `Invalid command node: ${JSON.stringify(nextNode)}`,
+            code: "INVALID_NODE",
+            message: `Invalid command node: ${JSON.stringify(node)}`,
           },
         };
       }
-      commandIDs.push(nextNode.id);
+      commandIDs.push(node.id);
       continue;
-    } else {
-      if (!isValidNode(nextNode)) {
-        return {
-          error: {
-            code: "INVALID_TREE",
-            message: `Invalid group node: ${nextNode}`,
-          },
-        };
-      }
-      // Continue traversing.
-      return recurseCommandTree(nextNode);
+    } else if (!isValidNode(node)) {
+      return {
+        error: {
+          code: "INVALID_NODE",
+          message: `Invalid group node: ${node}`,
+        },
+      };
     }
+    // Traverse this node.
+    recurseCommandTree(node, commandIDs);
   } // End of Traversal.
   const isUniqueList = (list: string[]) => new Set(list).size === list.length;
   if (!isUniqueList(commandIDs)) {

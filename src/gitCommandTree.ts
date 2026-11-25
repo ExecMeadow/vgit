@@ -6,7 +6,7 @@ import {
   GitCommand,
   EnvironmentContext as EnvContext,
 } from "./types.js";
-import { utils } from "./engine/validation.js";
+import { utils } from "./validation.js";
 
 /* Git Command Registry */
 // Branch
@@ -108,7 +108,7 @@ export const inputOutputContracts: IOValidation = {
   "tag-list": {
     input: {},
     output: {
-      tagList: { isRequired: true, isValid: utils.isString },
+      tagList: { isRequired: true, isValid: utils.isStringArray },
     },
   },
 };
