@@ -12,7 +12,8 @@ const {
   hasExactKeys,
   isString,
   isArray,
-  isStringArray,
+  isArrayOfStrings,
+  //isArrayOfObjects,
   isFunction,
 } = utils;
 
@@ -65,7 +66,7 @@ function isValidTerminalOutput(
     if (!isArray(terminalOutput.values)) {
       return false;
     }
-    if (!isStringArray(terminalOutput.values)) {
+    if (!isArrayOfStrings(terminalOutput.values)) {
       return false;
     }
   } else if (terminalOutput.type === "label-value") {

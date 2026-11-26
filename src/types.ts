@@ -36,6 +36,18 @@ type InputOutputContracts = {
     input: { [k in string]: never };
     output: { tagList: string[] };
   };
+  status: {
+    input: { [k in string]: never };
+    output: {
+      headStatus: { branchName?: string; detached: boolean; oid?: string };
+      upToDateStatus?: { upToDate: true; remote: string };
+      workingTreeStatus: {
+        untracked: string[];
+        staged: [string, string][];
+        unstaged: [string, string][];
+      };
+    };
+  };
 };
 type IOValidation = {
   [Id in GitCommandId]: {

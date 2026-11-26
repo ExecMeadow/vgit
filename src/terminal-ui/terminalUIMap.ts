@@ -28,7 +28,7 @@ const terminalUIMap: TerminalUIMap = {
         { type: "heading", value: "Branches:" },
         {
           type: "text",
-          value: `${displayedBranchList.length} branch${displayedBranchList.length === 1 ? "" : "es"} found.`,
+          value: `${displayedBranchList.length} branch${isPlural(displayedBranchList) ? "es" : ""} found.`,
         },
         { type: "list", style: "indented", values: displayedBranchList },
       ];
@@ -60,11 +60,72 @@ const terminalUIMap: TerminalUIMap = {
         { type: "heading", value: "Tags:" },
         {
           type: "text",
-          value: `${tagList.length} tag${tagList.length === 1 ? "" : "s"} found.`,
+          value: `${tagList.length} tag${isPlural(tagList) ? "s" : ""} found.`,
         },
         { type: "list", style: "indented", values: tagList },
       ];
     },
   },
+  status: {
+    present: (commandOutput: IO["status"]["output"]) => {
+      const { headStatus, upToDateStatus, workingTreeStatus } = commandOutput;
+      const outputs: TerminalOutput[] = [];
+      if (headStatus.detached) {
+        outputs.push({
+          type: "text",
+          value: `You are detached, on commit ${headStatus.oid}.`,
+        });
+      } else {
+        outputs.push({
+          type: "text",
+          value: `You are on branch '${headStatus.branchName}'.`,
+        });
+      }
+      if (upToDateStatus) {
+        outputs.push({
+          type: "text",
+          value: `Branch '${headStatus.branchName}' is up to date with '${upToDateStatus.remote}'`,
+        });
+      }
+
+      outputs.push({ type: "text", value: "" });
+      const { untracked, staged, unstaged } = workingTreeStatus;
+      if (staged.length > 0) {
+        outputs.push({
+          type: "text",
+          value: `${staged.length} staged file${isPlural(staged) ? "s" : ""}.`,
+        });
+        const stagedList: string[] = [];
+        for (const [file, fileStatus] of staged) {
+          stagedList.push(`${fileStatus}: ${file}`);
+        }
+        outputs.push({ type: "list", style: "indented", values: stagedList });
+      }
+      if (unstaged.length > 0) {
+        outputs.push({
+          type: "text",
+          value: `${unstaged.length} unstaged file${isPlural(unstaged) ? "s" : ""}.`,
+        });
+        const unstagedList: string[] = [];
+        for (const [file, fileStatus] of unstaged) {
+          unstagedList.push(`${fileStatus}: ${file}`);
+        }
+        outputs.push({ type: "list", style: "indented", values: unstagedList });
+      }
+      if (untracked.length > 0) {
+        outputs.push({
+          type: "text",
+          value: `${untracked.length} untracked file${isPlural(untracked) ? "s" : ""}.`,
+        });
+        outputs.push({ type: "list", style: "indented", values: untracked });
+      }
+      return outputs;
+    },
+  },
 };
+
+function isPlural(array: Array<unknown>) {
+  return array.length !== 1;
+}
+
 export default terminalUIMap;

@@ -14,7 +14,8 @@ const {
   hasExactKeys,
   isString,
   //isArray,
-  //isStringArray,
+  //isArrayOfStrings,
+  //isArrayOfObjects,
   isFunction,
 } = utils;
 

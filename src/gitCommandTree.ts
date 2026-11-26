@@ -7,12 +7,15 @@ import {
   EnvironmentContext as EnvContext,
 } from "./types.js";
 import { utils } from "./validation.js";
+import resolveMatrix from "./engine/resolveMatrix.js";
+
+const { isBoolean, isObject, isString, isArray, isArrayOfStrings } = utils;
 
 /* Git Command Registry */
 // Branch
 const branch = {
   list: (async (commandInput, context) => {
-    const { dir, fs } = context;
+    const { fs, dir } = context;
     try {
       // Fetch branch list.
       const branchList = await git.listBranches({ fs, dir });
@@ -31,7 +34,7 @@ const branch = {
     }
   }) satisfies GitCommand<"branch-list">["execute"],
   create: (async (commandInput, context) => {
-    const { dir, fs } = context;
+    const { fs, dir } = context;
     const { branchName } = commandInput;
     try {
       await git.branch({ fs, dir, ref: branchName ?? "" });
@@ -44,7 +47,7 @@ const branch = {
     commandInput: IO["branch-delete"]["input"],
     context: EnvContext,
   ) => {
-    const { dir, fs } = context;
+    const { fs, dir } = context;
     const { branchName } = commandInput;
     try {
       // Retrieve commit hash that this branch is pointing to:
@@ -66,7 +69,7 @@ const branch = {
 // Tag
 const tag = {
   list: (async (commandInput, context) => {
-    const { dir, fs } = context;
+    const { fs, dir } = context;
     try {
       // Fetch tag list.
       const tagList = await git.listTags({ fs, dir });
@@ -83,32 +86,115 @@ const tag = {
   }) satisfies GitCommand<"tag-list">["execute"],
 };
 
+// Status
+const status: GitCommand<"status">["execute"] = async (
+  commandInput,
+  context,
+) => {
+  const { fs, dir } = context;
+  try {
+    // Fetch head status.
+    const branchName = await git.currentBranch({ fs, dir, fullname: false });
+    const oid = await git.resolveRef({
+      fs,
+      dir,
+      ref: `refs/heads/${branchName}`,
+    });
+    const headStatus = branchName
+      ? { branchName, detached: false, oid: undefined }
+      : { detached: true, oid: oid.slice(0, 7), branchName: undefined };
+
+    // Fetch and compare local versus remote.
+    let upToDateStatus: { upToDate: true; remote: string } | undefined =
+      undefined;
+    const localRef = await git.currentBranch({ fs, dir, fullname: true });
+    if (localRef) {
+      const remoteAlias = await git.getConfig({
+        fs,
+        dir,
+        path: `branch.${branchName}.remote`,
+      });
+      const remoteBranch = await git.getConfig({
+        fs,
+        dir,
+        path: `branch.${branchName}.merge`,
+      });
+      const remoteRef = `refs/remotes/${remoteAlias}/${remoteBranch.slice("refs/heads/".length)}`;
+      const localOID = await git.resolveRef({ fs, dir, ref: localRef });
+      const remoteOID = await git.resolveRef({ fs, dir, ref: remoteRef });
+      upToDateStatus =
+        localOID === remoteOID
+          ? { upToDate: true, remote: `${remoteAlias}/${remoteBranch}` }
+          : undefined;
+    }
+
+    // Fetch working tree status.
+    const statusMatrix = await git.statusMatrix({ fs, dir });
+    const workingTreeStatus = resolveMatrix(statusMatrix);
+    return {
+      data: { headStatus, upToDateStatus, workingTreeStatus },
+    };
+  } catch (err: unknown) {
+    return { error: { code: "FAILED_GIT_COMMAND", message: `${err}` } };
+  }
+};
+
 /* IO Contracts */
 export const inputOutputContracts: IOValidation = {
   "branch-list": {
     input: {},
     output: {
-      branchList: { isRequired: true, isValid: utils.isStringArray },
-      currentBranch: { isRequired: false, isValid: utils.isString },
+      branchList: { isRequired: true, isValid: isArrayOfStrings },
+      currentBranch: { isRequired: false, isValid: isString },
     },
   },
   "branch-create": {
-    input: { branchName: { isRequired: true, isValid: utils.isString } },
+    input: { branchName: { isRequired: true, isValid: isString } },
     output: {
-      createdBranchName: { isRequired: true, isValid: utils.isString },
+      createdBranchName: { isRequired: true, isValid: isString },
     },
   },
   "branch-delete": {
-    input: { branchName: { isRequired: true, isValid: utils.isString } },
+    input: { branchName: { isRequired: true, isValid: isString } },
     output: {
-      deletedBranchName: { isRequired: true, isValid: utils.isString },
-      oid: { isRequired: true, isValid: utils.isString },
+      deletedBranchName: { isRequired: true, isValid: isString },
+      oid: { isRequired: true, isValid: isString },
     },
   },
   "tag-list": {
     input: {},
     output: {
-      tagList: { isRequired: true, isValid: utils.isStringArray },
+      tagList: { isRequired: true, isValid: isArrayOfStrings },
+    },
+  },
+  status: {
+    input: {},
+    output: {
+      headStatus: {
+        isRequired: true,
+        isValid: (ele) =>
+          isObject(ele) &&
+          isBoolean(ele.detached) &&
+          (ele.branchName ? isString(ele.branchName) : true),
+      },
+      upToDateStatus: {
+        isRequired: true,
+        isValid: (ele) => (ele ? isBoolean(ele) : true),
+      },
+      workingTreeStatus: {
+        isRequired: true,
+        isValid: (ele: unknown) => {
+          return (
+            isObject(ele) &&
+            isArray(ele.untracked) &&
+            isArrayOfStrings(ele.untracked) &&
+            isArray(ele.staged) &&
+            isArrayOfStrings(ele.staged) &&
+            isArray(ele.unstaged) &&
+            isArrayOfStrings(ele.unstaged)
+          );
+        },
+      },
     },
   },
 };
@@ -164,6 +250,15 @@ const gitCommandTree: GitCommandTree = {
     //  create: { annotated: {}, lightweight: {} },
     //  delete: {},
     //  show: {},
+  },
+  status: {
+    type: "command",
+    id: "status",
+    description:
+      "Display head status, up to date status, and working tree status",
+    usage: "vgit status",
+    io: inputOutputContracts["status"],
+    execute: status,
   },
   /*
   stash: {

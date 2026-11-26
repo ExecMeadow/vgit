@@ -5,7 +5,9 @@ export const utils = {
   hasExactKeys,
   isString,
   isArray,
-  isStringArray,
+  isArrayOfStrings,
+  isArrayOfObjects,
+  isBoolean,
   isFunction,
 };
 // Object validation
@@ -28,11 +30,19 @@ function isString(str: unknown): str is string {
 function isArray(arr: unknown): arr is unknown[] {
   return Array.isArray(arr);
 }
-function isStringArray(arr: unknown[]) {
-  return arr.every((element) => typeof element === "string");
+function isArrayOfStrings(arr: unknown[]): arr is string[] {
+  return arr.every((element) => isString(element));
+}
+function isArrayOfObjects(arr: unknown[]): arr is Record<string, unknown>[] {
+  return arr.every((element) => isObject(element));
 }
 
-// function validation
+// Boolean validation
+function isBoolean(b: unknown): b is boolean {
+  return typeof b === "boolean";
+}
+
+// Function validation
 function isFunction(fun: unknown) {
   return typeof fun === "function";
 }
